@@ -1,0 +1,72 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the Human Browser API
+  version: 1.0.0
+extends: ../openapi/humanbrowser-cloud-openapi.json
+x-generated: '2026-09-19'
+x-method: generated
+x-source: >-
+  Generated from openapi/humanbrowser-cloud-openapi.json plus the probed and searched artifacts in this repo.
+  Captures API Evangelist annotations without mutating the provider's contract.
+actions:
+- target: $.info
+  description: Link the provider's other machine-readable surfaces from the contract.
+  update:
+    x-agent-card: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+    x-mcp-server: https://agent.humanbrowser.cloud/mcp
+    x-mcp-stdio: npx -y @virixlabs/humanbrowser mcp
+    x-a2a-endpoint: https://agent.humanbrowser.cloud/a2a
+    x-oauth-authorization-server: https://agent.humanbrowser.cloud/.well-known/oauth-authorization-server
+    x-oauth-protected-resource: https://agent.humanbrowser.cloud/.well-known/oauth-protected-resource
+    x-ai-plugin: https://humanbrowser.cloud/.well-known/ai-plugin.json
+    x-llms-txt: https://humanbrowser.cloud/llms.txt
+    x-pricing: https://humanbrowser.cloud/install
+    x-pricing-json: https://humanbrowser.cloud/api/plans
+    x-terms-of-service: https://humanbrowser.cloud/terms
+    x-privacy-policy: https://humanbrowser.cloud/privacy
+    x-refund-policy: https://humanbrowser.cloud/refund
+    x-npm: https://www.npmjs.com/package/@virixlabs/humanbrowser
+- target: $.info
+  description: Record the limits the provider publishes outside the contract (agent card, Terms), since no rate-limit headers are declared.
+  update:
+    x-rate-limits:
+    - {scope: per-token, resource: MCP endpoint, limit: 60, window: 60s}
+    - {scope: per-token, resource: concurrent browser sessions, limit: 5, exhaustion_status: 503, signal: retry_after_seconds in body}
+    - {scope: per-session, resource: queued tasks, limit: 20, signal: 202 queued}
+    - {scope: per-email, resource: trial tokens, limit: 1, window: lifetime, exhaustion_status: 429}
+    - {scope: per-token, resource: prepaid balance, exhaustion_status: 402, error: quota_exceeded}
+- target: $.info
+  description: The versioning header the description names but no operation declares.
+  update:
+    x-api-version-header: {name: X-API-Version, in: header, required: false, default: '2026-08-01'}
+- target: $.components.securitySchemes.oauth2
+  description: The declared clientCredentials tokenUrl 404s (GET and POST, 2026-09-19); the live OAuth server on the same host is authorization-code + PKCE with scopes mcp:run / mcp:read.
+  update:
+    x-apievangelist-probe: {url: 'https://agent.humanbrowser.cloud/oauth/token', status: 404, fetched: '2026-09-19'}
+    x-live-authorization-server: https://agent.humanbrowser.cloud/.well-known/oauth-authorization-server
+- target: $.paths['/api/usage'].get
+  description: Live probe answered 401 asking for a DEPLOY_SECRET, not the customer bearer token the contract declares.
+  update:
+    x-apievangelist-probe: {status: 401, body: '{"error":"Unauthorized. Pass Authorization: Bearer <DEPLOY_SECRET>"}', fetched: '2026-09-19'}
+- target: $.paths['/api/plans'].get
+  description: Machine-readable pricing; note it describes monthly subscriptions while the Terms describe prepaid pay-as-you-go.
+  update:
+    x-apievangelist-probe: {status: 200, fetched: '2026-09-19'}
+    x-pricing-model-conflict: true
+- target: $.paths['/api/topup'].post
+  update:
+    x-reversible: {grade: verified, reversal: 'refund by email within 7 days of an untouched top-up', docs: 'https://humanbrowser.cloud/refund'}
+    x-idempotency: none
+- target: $.paths['/a2a'].post
+  description: The A2A endpoint described as a REST operation; annotate the JSON-RPC methods, the MCP tools that wrap it and the reversal path.
+  update:
+    x-jsonrpc-methods: [message/send, message/stream, tasks/get, tasks/cancel, 'actions/<name> (12 custom actions)']
+    x-mcp-tools: [humanbrowser_run, humanbrowser_stream, humanbrowser_viewer_url]
+    x-reversible: {grade: documented, reversal: 'tasks/cancel while the task is non-terminal', note: 'side effects on third-party sites are not reversible'}
+    x-idempotency: none
+    x-human-in-the-loop: 'state=input-required; resume via message/send with taskId + contextId'
+    x-server: https://agent.humanbrowser.cloud
+- target: $.paths['/api/trial-balance'].post
+  update:
+    x-apievangelist-probe: {method: GET, status: 405, body: '{"error":"method-not-allowed"}', fetched: '2026-09-19'}
+    x-natural-key: 'one per email, lifetime'

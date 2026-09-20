@@ -1,0 +1,89 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/humanbrowser-cloud-openapi.json
+probed: true
+docs:
+- https://humanbrowser.cloud/terms
+- https://agent.humanbrowser.cloud/.well-known/agent-card.json
+format: json-error-object
+envelope:
+  media_type: application/json
+  schema: components.schemas.Error — "Uniform typed error model returned by every 4xx/5xx response"
+  fields:
+  - {name: error, required: true, description: 'Stable machine-readable code, e.g. invalid-email, not-signed-in, rate-limited, insufficient-balance, server-error (from the schema description)'}
+  - {name: message, description: Human-readable explanation.}
+  - {name: hint, description: Optional remediation hint for agents.}
+  - {name: retry_after_seconds, description: 'Present on 429; how long to wait before retrying.'}
+  observed:
+  - {status: 405, body: '{"error":"method-not-allowed"}', url: 'GET https://humanbrowser.cloud/api/trial-balance'}
+  - {status: 400, body: '{"error":"bad-token"}', url: 'GET https://humanbrowser.cloud/api/account (no cookie, no token)'}
+  - {status: 401, body: '{"error":"Unauthorized. Pass Authorization: Bearer <DEPLOY_SECRET>"}', url: 'GET https://humanbrowser.cloud/api/usage', note: 'The contract says getUsage takes the customer bearer token or oauth2 account:read; the live endpoint asks for a deployment secret. Either the route is operator-only or the spec over-publishes it.'}
+  - {status: 401, body: '{"error":"unauthorized","hint":"Authorization: Bearer hb_live_<token>"}', url: 'POST https://agent.humanbrowser.cloud/mcp', headers: 'WWW-Authenticate: Bearer realm="humanbrowser-mcp"'}
+  - {status: 401, body: '{"error":"unauthorized","hint":"Authorization: Bearer <token> required"}', url: 'GET https://agent.humanbrowser.cloud/api/balance'}
+  - {status: 401, body: '{"jsonrpc":"2.0","id":null,"error":{"code":-32001,"message":"Unauthorized","data":{"hint":"Authorization: Bearer <token>"}}}', url: 'POST https://agent.humanbrowser.cloud/a2a', note: '-32001 is TaskNotFoundError in the A2A registry.'}
+  - {status: 404, body: '{"error":"not-found","path":"/..."}', url: 'any unknown path on agent.humanbrowser.cloud', note: 'Real JSON 404, 35-91 bytes; the apex serves a 26,914-byte HTML 404 page instead.'}
+  - {status: 405, url: 'GET https://agent.humanbrowser.cloud/mcp', note: 'POST-only MCP endpoint.'}
+  - {status: 400, body: '{"error":"unsupported_response_type","error_description":"response_type must be ''code''"}', url: 'GET https://agent.humanbrowser.cloud/authorize'}
+  - {status: 400, body: '{"error":"invalid_client","error_description":"client_id must be CIMD URL (https://) or DCR id (hbc_<32hex>)"}', url: 'GET https://agent.humanbrowser.cloud/authorize?response_type=code&client_id=probe'}
+  - {status: 400, body: '{"error":"unsupported_grant_type","error_description":"grant_type must be authorization_code or refresh_token"}', url: 'POST https://agent.humanbrowser.cloud/token (empty form)'}
+  note: >-
+    Not RFC 9457 — no type URI, no title/status/instance. The REST envelope is {error, message?, hint?,
+    retry_after_seconds?}; the JSON-RPC surfaces use JSON-RPC 2.0 error objects; the OAuth endpoints use
+    RFC 6749 {error, error_description}. The codes the schema lists as examples (invalid-email,
+    not-signed-in, rate-limited, insufficient-balance, server-error) and the ones observed live
+    (method-not-allowed, bad-token, unauthorized, not-found) are kebab-case; the Terms name one more,
+    quota_exceeded, in snake_case.
+problem_types:
+- status: 400
+  title: Bad request / bad token
+  occurrences: 2
+  source_operations: [claimTrial, topUp]
+  observed_codes: [bad-token, invalid-email (schema example)]
+  remediation: Fix the body (email must be a valid address; amount_usd is a number >= 1 with method stripe | crypto). getAccount without a valid token also answers 400 bad-token rather than 401.
+- status: 401
+  title: Unauthorized
+  occurrences: 4
+  source_operations: [getAccount, topUp, getUsage, runA2ATask]
+  observed_codes: [unauthorized, not-signed-in (schema example)]
+  remediation: 'Send Authorization: Bearer hb_live_<token> (never in a query string). The dashboard route getAccount wants the hb_session cookie instead. On /a2a the same failure is JSON-RPC error -32001 with HTTP 401.'
+- status: 402
+  title: Payment required / balance exhausted
+  occurrences: 1
+  source_operations: [runA2ATask]
+  observed_codes: [quota_exceeded (Terms 4), insufficient-balance (schema example)]
+  remediation: 'Top up via POST /api/topup (Stripe) or POST /api/buy (crypto). Per the Terms the key stays valid, running sessions finish, nothing is deleted.'
+- status: 429
+  title: Rate limited
+  occurrences: 1
+  source_operations: [claimTrial]
+  observed_codes: [rate-limited (schema example)]
+  remediation: 'Read retry_after_seconds from the body. On claimTrial the cause is one-token-per-email-for-life, so a retry will not help.'
+- status: 500
+  title: Server error
+  occurrences: 4
+  source_operations: [claimTrial, getAccount, topUp, getPlans]
+  observed_codes: [server-error (schema example)]
+- status: 503
+  title: Concurrency cap
+  occurrences: 0
+  source_operations: [runA2ATask]
+  note: Not in the contract; documented in the agent card — over five simultaneous sessions per token returns 503 with retry_after_seconds.
+  remediation: Wait retry_after_seconds or queue on the existing session (force_new:false) instead of spawning.
+- status: 202
+  title: Task queued (not an error)
+  source_operations: [runA2ATask]
+  note: 'A second task on a busy session is accepted with {queued:true, task_id, position, queue_depth} rather than refused with 409 busy as it once was (agent card).'
+task_failure_vocabulary:
+  source: agent card metadata.blocks and the postmortem contract
+  note: Failures inside a completed HTTP exchange are reported on the Task, not as HTTP errors.
+  blocks:
+  - {code: submit_guard, retryable: false, meaning: a submit/pay/order-type button was clicked the maximum times on one page without navigation; verify the submission first, then re-run with metadata.overrides}
+  - {code: repeat_action, meaning: same action repeated with no page change}
+  - {code: no_effect_click, meaning: a click changed nothing (overlay, not interactive yet)}
+  - {code: scroll_no_progress, meaning: scrolled to the end without finding the target}
+  - {code: navigate_loop, meaning: same URL loaded repeatedly (redirect loop / login wall)}
+  - {code: captcha_unsolved, meaning: the captcha solver failed; a re-run usually gets a fresh one}
+  - {code: input_not_binding, meaning: typed text did not land in a framework-controlled field}
+  - {code: account_lockdown, retryable: false, meaning: the account is behind a site checkpoint; a human must clear it in this profile}
+  postmortem: 'on state=failed, tasks/get attaches metadata.postmortem {root_cause_category, observed_blockers, working_strategies, retry_recommendation} within ~30 s'
+  diagnostics: 'actions/get_page_diagnostics returns verdict ok | degraded | page_did_not_start | broken_by_us'

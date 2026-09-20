@@ -1,0 +1,41 @@
+generated: '2026-09-19'
+method: searched
+source: https://humanbrowser.cloud/a2a
+docs:
+- https://agent.humanbrowser.cloud/.well-known/agent-card.json
+spec_type: Webhooks
+asyncapi_published: false
+probed:
+- {url: 'https://humanbrowser.cloud/asyncapi.yaml', status: 404, fetched: '2026-09-19'}
+summary: >-
+  No AsyncAPI document is published. The provider does document an outbound event surface: (1) an SSE
+  stream on message/stream that emits the A2A event frames, and (2) push delivery of the terminal task
+  envelope to a caller-supplied HTTPS callback (message.metadata.callback_url), which the card's
+  capabilities.pushNotifications: true declares. The events and their fields are recorded from the A2A
+  page and the card; nothing was observed live because every call is bearer-gated. No signing scheme,
+  retry policy or delivery guarantee is documented for the callback.
+webhooks:
+- name: task.terminal (callback_url)
+  direction: outbound
+  transport: HTTPS POST to message.metadata.callback_url
+  payload: the terminal Task envelope (state completed | failed | canceled | input-required, metadata.outcome, metadata.postmortem on failure, artifacts)
+  security: undocumented (no signature header, no shared secret described)
+  retries: undocumented
+  source: 'agent card — "callback_url=<https://...> for push delivery of the terminal task envelope instead of polling"; "poll tasks/get OR receive a push on metadata.callback_url"'
+streams:
+- name: message/stream (SSE)
+  transport: 'Server-Sent Events over the POST /a2a response; Accept: text/event-stream'
+  events:
+  - {kind: task, when: first frame, carries: 'Task with metadata.viewer_url / viewerUrl, metadata.session_id, estimated_cost_usd'}
+  - {kind: status-update, when: each state change and progress step, carries: 'status.state, status.message (human-readable headline), final:true on terminal or input-required'}
+  - {kind: artifact-update, when: terminal, carries: 'artifact.parts[] — text answer, data, kind:file parts'}
+  - {kind: task_waiting, when: 'every 20 s while queued', carries: 'position; a heartbeat that keeps the connection alive (agent card)'}
+  - {kind: 'meta, router_decision', when: session-level, carries: 'events with no task_id apply to the whole session (agent card)'}
+  note: 'On input-required the stream closes (final:true); message/stream with the same envelope re-opens an SSE stream on the same taskId. The WebSocket event stream the card describes belongs to the SESSION, so a client must filter events by task_id.'
+- name: MCP notifications/progress
+  transport: MCP progress notifications on humanbrowser_stream (stdio server, mcp/server.js)
+  events:
+  - {kind: notifications/progress, carries: 'progressToken, progress counter, message "<state>: <status.message> (viewer: <url>)"'}
+inbound_webhooks:
+- name: Stripe payment webhook
+  note: 'llms-full.txt: "After payment, balance auto-updates via webhook within seconds" — an inbound Stripe -> provider webhook, not a customer-facing surface.'

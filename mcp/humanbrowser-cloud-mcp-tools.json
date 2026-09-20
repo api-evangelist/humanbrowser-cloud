@@ -1,0 +1,81 @@
+{
+  "x-provenance": {
+    "generated": "2026-09-19",
+    "method": "searched",
+    "source": "https://registry.npmjs.org/@virixlabs/humanbrowser/-/humanbrowser-5.0.3.tgz -> package/mcp/server.js (TOOLS constant), transcribed verbatim",
+    "note": "This is the stdio server's tool list as shipped in the provider's package source, NOT a live tools/list response: the hosted endpoint https://agent.humanbrowser.cloud/mcp answers tools/list with HTTP 401 anonymously. The agent card's MCP section names the same three tools with the same arguments."
+  },
+  "serverInfo": {
+    "name": "@virixlabs/humanbrowser",
+    "version": "5.0.3"
+  },
+  "tools": [
+    {
+      "name": "humanbrowser_run",
+      "description": "Run a Human Browser cloud task. Drives a cloud Chromium (Patchright + Camoufox + residential proxy) to accomplish the given goal. Blocks until terminal state. Returns the final natural-language answer plus a live viewer URL a human can open to watch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string",
+            "description": "Natural-language task for the cloud browser agent."
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO country code for the residential proxy (e.g. \"us\", \"gb\", \"de\"). Optional."
+          },
+          "profile": {
+            "type": "string",
+            "description": "Persistent profile name (cookies + storage survive across runs). Optional."
+          }
+        },
+        "required": [
+          "goal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "humanbrowser_stream",
+      "description": "Same as humanbrowser_run but streams agent status as MCP progress notifications while the task is in flight. Use when you want live visibility into a long-running task.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "goal": {
+            "type": "string",
+            "description": "Natural-language task for the cloud browser agent."
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO country code for the residential proxy (e.g. \"us\", \"gb\", \"de\"). Optional."
+          },
+          "profile": {
+            "type": "string",
+            "description": "Persistent profile name (cookies + storage survive across runs). Optional."
+          }
+        },
+        "required": [
+          "goal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "humanbrowser_viewer_url",
+      "description": "Fetch the live viewer URL for a previously-started task by id. Useful for re-attaching a human watcher to an in-flight or completed task.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "Task id returned by a prior humanbrowser_run/stream call."
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

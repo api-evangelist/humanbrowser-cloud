@@ -1,0 +1,184 @@
+generated: '2026-09-19'
+method: probed
+source: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+card:
+  file: a2a/humanbrowser-cloud-agent-card.json
+discovery:
+  path: /.well-known/agent-card.json
+  canonical: true
+  host: agent.humanbrowser.cloud
+  note: >-
+    Served from the A2A/MCP host named in the card's own url (agent.humanbrowser.cloud) AND byte-identically
+    from the website apex (https://humanbrowser.cloud/.well-known/agent-card.json, sha256 identical, 58,101
+    bytes on both). The legacy /.well-known/agent.json path returns a real JSON 404 on the agent host
+    ({"error":"not-found","path":"/.well-known/agent.json"}) and the site's HTML 404 page on the apex; a
+    negative-control path that cannot exist 404s on both hosts, so the 200s are served documents, not a
+    catch-all. www.humanbrowser.cloud does not resolve (NXDOMAIN), so there is no www host to probe. Ownership is not in question: provider.organization is "Virix Labs" with provider.url
+    https://humanbrowser.cloud; the OpenAPI at https://humanbrowser.cloud/openapi.json names contact Virix
+    Labs / general@virixlabs.com and lists https://agent.humanbrowser.cloud as its second server; the Terms
+    and Privacy pages name Virix Ltd, company 16325097 (confirmed Active at Companies House); the npm package
+    @virixlabs/humanbrowser (maintainer virix-labs, general@virixlabs.com) hard-codes the same card URL in
+    its `doctor` command.
+x-evidence:
+  fetched: '2026-09-19'
+  url: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+  http_status: 200
+  content_type: application/json; charset=utf-8
+  body_bytes: 58101
+  body_parses_as: JSON object with AgentCard shape (name, url, version, protocolVersion, preferredTransport, provider, documentationUrl, iconUrl, capabilities, defaultInputModes, defaultOutputModes, securitySchemes, security, skills, additionalInterfaces)
+  corroborating_probes:
+  - url: https://humanbrowser.cloud/.well-known/agent-card.json
+    http_status: 200
+    note: Byte-identical copy (same sha256) served from the website apex.
+  - url: https://agent.humanbrowser.cloud/.well-known/agent.json
+    http_status: 404
+    note: Legacy path; real JSON 404, 54 bytes.
+  - url: https://humanbrowser.cloud/.well-known/agent.json
+    http_status: 404
+  - url: https://agent.humanbrowser.cloud/.well-known/humanbrowser-cloud-negative-control-4b9e1d.json
+    http_status: 404
+    note: Negative control — the host is not a path-echoing catch-all.
+  - url: https://agent.humanbrowser.cloud/a2a
+    method: GET
+    http_status: 404
+    note: The JSON-RPC endpoint is POST-only; GET returns the host's generic JSON 404.
+  - url: https://agent.humanbrowser.cloud/a2a
+    method: POST
+    body: '{"jsonrpc":"2.0","id":1,"method":"agent/getAuthenticatedExtendedCard"}'
+    http_status: 401
+    response: '{"jsonrpc":"2.0","id":null,"error":{"code":-32001,"message":"Unauthorized","data":{"hint":"Authorization: Bearer <token>"}}}'
+    note: >-
+      A live JSON-RPC 2.0 responder that gates every method behind the bearer token the card declares. No
+      message was sent and nothing was spent. Note the error code: -32001 is TaskNotFoundError in the A2A
+      specification; this server reuses it for Unauthorized (recorded under deviations).
+  - url: https://humanbrowser.cloud/a2a
+    http_status: 200
+    note: The card's documentationUrl — a real protocol page documenting message/send, message/stream, tasks/get and tasks/cancel with curl, Node and Python examples.
+  - url: https://a2aregistry.org
+    note: >-
+      The card was first seen among the 415 agents listed on a2aregistry.org (fetched 2026-09-19), which is
+      how this provider entered the harvest backlog. The registry listing was the lead; the card above was
+      fetched directly from the provider's own hosts.
+agent_card:
+  name: humanbrowser
+  description_bytes: 25284
+  description_summary: >-
+    "Stealth cloud browser-agent with residential proxies" — a plain-English goal is run by an LLM-driven
+    Chromium on a residential IP and answered with text plus a live viewer URL. The 25 KB description is
+    itself an operating manual for the calling agent: when to use it, how to get a key (self-service POST
+    /api/buy), pricing, verbatim-payload markers, the task queue, learned site APIs, profile persistence,
+    the input-required resume contract, diagnostics, screenshots, the reporting contract, and the MCP
+    alternative.
+  url: https://agent.humanbrowser.cloud/a2a
+  version: 5.1.0
+  protocol_version: 0.3.0
+  preferred_transport: JSONRPC
+  provider:
+    organization: Virix Labs
+    url: https://humanbrowser.cloud
+  documentation_url: https://humanbrowser.cloud/a2a
+  icon_url: https://humanbrowser.cloud/favicon.ico
+  capabilities:
+    streaming: true
+    push_notifications: true
+    state_transition_history: true
+    human_in_the_loop: true
+  default_input_modes: [text/plain, application/json, image/png, image/jpeg, image/webp, image/gif, application/pdf, video/mp4, application/octet-stream]
+  default_output_modes: [text/plain, application/json]
+  security_schemes:
+    http_bearer: {type: http, scheme: bearer, description: Skill token issued by humanbrowser.cloud. Required on every /a2a call.}
+  security: [{http_bearer: []}]
+  additional_interfaces:
+  - {url: 'https://agent.humanbrowser.cloud/a2a', transport: JSONRPC}
+  skill_count: 9
+  skills:
+  - {id: browser_task, name: Browser Task, tags: [browser, automation, scraping, navigation, stealth]}
+  - {id: login_and_scrape, name: Login and Scrape, tags: [browser, login, scraping, authenticated]}
+  - {id: meta_business_workflow, name: Meta Business Workflow, tags: [browser, meta, facebook, ads-manager, business-suite, multi-account, adspower], price_stated: '+$0.05/session surcharge'}
+  - {id: fill_form, name: Fill Form, tags: [browser, form, submit]}
+  - {id: scrape_url, name: Scrape URL, tags: [browser, scraping, url-to-json, structured-extraction]}
+  - {id: relay_reverse_api, name: Relay (reverse-API), tags: [reverse-api, relay, fast-path, no-browser, cost-optimized], price_stated: '~$0.0001 per call vs $0.005-0.02 per browser task'}
+  - {id: hostile_site_solver, name: Hostile Site Solver, tags: [anti-bot, cloudflare, turnstile, perimeterx, datadome, cua, hard-target], price_stated: '$0.005/solve on success; $0.13-$0.30 per successful task'}
+  - {id: email_verified_signup, name: Email-Verified Signup, tags: [signup, onboarding, email-otp, turnstile, hunter, apollo, zerobounce], price_stated: '~$0.16 per successful signup'}
+  - {id: network_discovery, name: Network endpoint discovery, tags: [browser, network, reverse-api, discovery, api-scout], examples: null}
+  skill_invocation: >-
+    Every skill is reached through the same POST /a2a endpoint with message/send or message/stream; the
+    card and the /a2a page say the skill is chosen implicitly from the shape of the message parts (a
+    TextPart goal, an optional DataPart with metadata.sensitive=true for credentials, an optional FilePart)
+    and from message.metadata (profile, country, engine, mobile_ua, callback_url). There is no skill-id
+    parameter in the protocol call.
+  non_standard_top_level_keys:
+    metadata: >-
+      open_source flag, sdk_urls (npm, github, mcp_shim), pricing_json_url https://humanbrowser.cloud/api/plans
+      (live, 200), mcp_url https://agent.humanbrowser.cloud/mcp, a cdp_url_pattern
+      (wss://agent.humanbrowser.cloud/cdp?token=...), viewer_url_pattern, engines_supported (patchright,
+      cloak, cua, adspower, remote-cdp, relay), remote_cdp_providers (brightdata, browserbase, browseruse), and
+      a `blocks` vocabulary (submit_guard, repeat_action, no_effect_click, scroll_no_progress, navigate_loop,
+      captcha_unsolved, input_not_binding, account_lockdown) with retryable flags and overrides.
+    extensions: >-
+      Four extension URIs at the TOP LEVEL rather than under capabilities.extensions —
+      https://humanbrowser.cloud/a2a-ext/input-required/v1 (the pause/resume contract, with ask_schema and two
+      resume protocols), /a2a-ext/relay/v1, /a2a-ext/engine-router/v1, /a2a-ext/viewer/v1; all required:false.
+      The URIs are identifiers, not documents: GET on each returns the site's HTML 404.
+    customActions: >-
+      Twelve provider-specific JSON-RPC methods invoked as "actions/<name>" on the same endpoint —
+      switch_proxy_country, get_cost_snapshot, list_engines, list_countries, get_page_diagnostics,
+      get_screenshots, list_models, list_learned_apis, call_site_api, upload_file, actions/discover_endpoints,
+      list_remote_providers — each with a JSON-Schema params block. These are outside the A2A method set.
+conformance:
+  spec: A2A 1.0.0
+  grade: conformant
+  protocol_version: '0.3.0'
+  preferred_transport: JSONRPC
+  hard_checks:
+    capabilities_is_object: true
+    protocol_version_present: true
+    skills_is_array: true
+  optional_fields:
+    default_input_modes: true
+    default_output_modes: true
+    preferred_transport: true
+  grade_basis: >-
+    Graded against the A2A 1.0.0 hard checks. capabilities is an OBJECT (pass) carrying streaming,
+    pushNotifications and stateTransitionHistory; protocolVersion is present at the top level (pass),
+    declared "0.3.0"; skills is an ARRAY (pass) of nine skills, each with id, name, description, tags,
+    inputModes and outputModes. All three optional discriminators are present (preferredTransport JSONRPC,
+    defaultInputModes, defaultOutputModes). This is a 0.3.0-shaped card — top-level url + preferredTransport +
+    protocolVersion plus additionalInterfaces[] — and it is internally consistent with that revision. The
+    provider's prose ("A2A 1.0" on every page, in llms.txt and in the OpenAPI) claims a newer revision than
+    the card declares.
+  deviations:
+  - field: protocolVersion vs prose
+    observed: card declares 0.3.0; the website, llms.txt, npm README and OpenAPI all say "A2A 1.0"
+    note: Valid for 0.3.0. A reader written against 1.0.0 looks for supportedInterfaces[].protocolBinding and will not find it; recorded because both card shapes coexist in the catalog and because the provider's own description over-states the revision.
+  - field: capabilities.humanInTheLoop
+    observed: 'true'
+    note: Not an A2A capability key. The human-takeover behaviour it names is real (viewer URL + input-required pause), but a conformant reader ignores the key.
+  - field: extensions / customActions / metadata
+    observed: present at the top level of the card; capabilities.extensions is absent
+    note: A2A places extension declarations under capabilities.extensions[]; the card's four extension URIs sit at the root, where a spec reader will not look, alongside two entirely non-standard blocks (customActions, metadata). The information is useful and the card is richer for it, but none of it is discoverable through the standard shape.
+  - field: skills[8].examples (network_discovery)
+    observed: 'null'
+    note: Every other skill carries examples[]; this one carries an explicit null.
+  - field: error code on unauthorized calls
+    observed: JSON-RPC error -32001 "Unauthorized"
+    note: -32001 is TaskNotFoundError in the A2A error registry; an A2A client that maps codes will misread an auth failure as a missing task. HTTP 401 is also returned, so a transport-level reader gets it right.
+  - field: version
+    observed: 5.1.0 on the card; 5.0.3 on npm (latest, 2026-06-17); 1.0.0 in the OpenAPI info.version
+    note: Three surfaces, three version numbers.
+  - field: additionalInterfaces
+    observed: one entry identical to the primary url + transport
+    note: Redundant rather than wrong.
+  - field: signatures
+    observed: absent
+    note: No JWS signature block; the card's authenticity rests on TLS to the two hosts that serve it.
+surface_relationship:
+  note: >-
+    Four agent surfaces, one runtime. A2A (POST https://agent.humanbrowser.cloud/a2a, message/send |
+    message/stream | tasks/get | tasks/cancel plus twelve actions/* methods) is what the provider calls the
+    canonical surface. MCP (https://agent.humanbrowser.cloud/mcp, Streamable HTTP, same hb_live_ token, and a
+    stdio server in the npm package) wraps the same task loop in three tools — see mcp/humanbrowser-cloud-mcp.yml.
+    REST (https://humanbrowser.cloud/api/*) is the account side only: trial token, balance, top-up, plans,
+    usage; the OpenAPI's sixth operation, runA2ATask, is the A2A endpoint itself described as a POST. A
+    ChatGPT Custom GPT and an OpenAI-style /.well-known/ai-plugin.json point at the same /a2a and openapi.json.
+    See mcp/humanbrowser-cloud-tool-crosswalk.yml for the binding.

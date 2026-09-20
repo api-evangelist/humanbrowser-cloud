@@ -1,0 +1,12 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Human Browser",
+  "name_for_model": "human_browser",
+  "description_for_human": "Cloud Chromium for AI agents — real residential-IP browser, captcha solving, human-in-the-loop takeover.",
+  "description_for_model": "Drive a real Chromium browser on a clean residential IP. Send a natural-language goal; the platform runs an LLM-driven browser session and returns a concise answer plus a live viewer URL. Use for logging into sites behind CAPTCHA / Cloudflare / anti-bot fingerprinting, scraping behind auth, and any web task an agent cannot do from a datacenter IP. A2A 1.0 and MCP native. Full reference at https://humanbrowser.cloud/llms-full.txt.",
+  "auth": { "type": "user_http", "authorization_type": "bearer" },
+  "api": { "type": "openapi", "url": "https://humanbrowser.cloud/openapi.json" },
+  "logo_url": "https://humanbrowser.cloud/apple-touch-icon.png",
+  "contact_email": "general@virixlabs.com",
+  "legal_info_url": "https://humanbrowser.cloud/terms"
+}

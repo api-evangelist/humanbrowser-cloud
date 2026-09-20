@@ -1,0 +1,129 @@
+generated: '2026-09-19'
+method: searched
+source: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+derived_from: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://humanbrowser.cloud/a2a
+- https://humanbrowser.cloud/docs/mcp
+- https://humanbrowser.cloud/privacy
+summary: >-
+  Human Browser's conformance profile is the agent-protocol stack, declared in its own contracts rather
+  than claimed in marketing: an A2A 0.3.0 agent card served at the RFC 8615 well-known path on two hosts,
+  JSON-RPC 2.0 with SSE streaming, an MCP Streamable HTTP endpoint with RFC 9728 protected-resource metadata
+  and RFC 8414 authorization-server metadata (OAuth 2.1 shape: PKCE S256, client-ID metadata documents,
+  dynamic client registration), an OpenAI plugin manifest, llms.txt, and an OpenAPI 3.1.0. It declares no
+  RFC 9457 problem details, no RFC 9116 security.txt, no OIDC, no RFC 9727 API catalog, no APIs.json, no
+  Sunset signalling, and no security certification (no SOC 2 / ISO 27001 claim anywhere). UK GDPR / EU GDPR
+  are named as the privacy regime with a 72-hour breach clock.
+standards:
+- id: a2a
+  name: Agent2Agent protocol
+  version: '0.3.0'
+  conforms: true
+  domain_standard_signature: true
+  evidence: >-
+    a2a/humanbrowser-cloud-agent-card.json — protocolVersion "0.3.0", url https://agent.humanbrowser.cloud/a2a,
+    preferredTransport JSONRPC, capabilities object {streaming, pushNotifications, stateTransitionHistory},
+    skills[] of 9, securitySchemes http bearer. POST /a2a answered a JSON-RPC 2.0 error envelope (HTTP 401).
+    Graded conformant in a2a/humanbrowser-cloud-a2a.yml. This is the contract-level declaration of the
+    agent-runtime market's interoperability standard.
+- id: mcp
+  name: Model Context Protocol (Streamable HTTP + stdio)
+  conforms: true
+  verification: partial
+  domain_standard_signature: true
+  evidence: >-
+    POST https://agent.humanbrowser.cloud/mcp answers 401 with WWW-Authenticate: Bearer realm="humanbrowser-mcp"
+    and CORS allow-lists Mcp-Session-Id / MCP-Protocol-Version; GET is 405. The npm package's mcp/server.js
+    is built on @modelcontextprotocol/sdk ^1.29.0 and registers ListTools/CallTool handlers with JSON-Schema
+    inputSchemas. The protocol version negotiated by the hosted endpoint was not observed (gated).
+- id: rfc9728
+  name: OAuth 2.0 Protected Resource Metadata
+  conforms: true
+  evidence: 'https://agent.humanbrowser.cloud/.well-known/oauth-protected-resource — resource https://agent.humanbrowser.cloud/mcp, authorization_servers [https://agent.humanbrowser.cloud], scopes_supported [mcp:run, mcp:read], bearer_methods_supported [header].'
+- id: rfc8414
+  name: OAuth 2.0 Authorization Server Metadata
+  conforms: true
+  verification: partial
+  evidence: 'https://agent.humanbrowser.cloud/.well-known/oauth-authorization-server — issuer, authorization/token/registration/revocation endpoints, code + PKCE S256, authorization_code + refresh_token, client_id_metadata_document_supported true. /authorize and POST /token answer RFC 6749 error objects; GET /token, GET /register and service_documentation 404.'
+- id: oauth2
+  name: OAuth 2.0 / 2.1
+  conforms: true
+  verification: partial
+  evidence: 'The OpenAPI declares an oauth2 clientCredentials scheme (scopes session:run, account:read, account:topup) at tokenUrl https://agent.humanbrowser.cloud/oauth/token, which 404s on GET and POST; the live authorization server above is authorization-code + PKCE with different scopes. Two OAuth stories, one of them dead.'
+- id: pkce
+  name: RFC 7636 PKCE
+  conforms: true
+  evidence: code_challenge_methods_supported [S256] in the AS metadata.
+- id: dcr
+  name: RFC 7591 Dynamic Client Registration
+  conforms: true
+  verification: partial
+  evidence: 'registration_endpoint declared; /authorize accepts "DCR id (hbc_<32hex>)"; GET /register 404 (POST not attempted because it would register a client).'
+- id: cimd
+  name: OAuth Client ID Metadata Documents
+  conforms: true
+  evidence: 'client_id_metadata_document_supported: true; /authorize error text "client_id must be CIMD URL (https://)".'
+- id: json-rpc-2.0
+  conforms: true
+  evidence: '/a2a answers {"jsonrpc":"2.0",...} error envelopes; the card says unknown methods return -32601.'
+- id: sse
+  name: Server-Sent Events
+  conforms: true
+  evidence: 'message/stream with Accept: text/event-stream; task / status-update / artifact-update frames (https://humanbrowser.cloud/a2a). Not observed live (gated).'
+- id: rfc8615
+  name: Well-Known URIs
+  conforms: true
+  evidence: /.well-known/agent-card.json (two hosts), /.well-known/ai-plugin.json, /.well-known/oauth-authorization-server, /.well-known/oauth-protected-resource all served. See well-known/.
+- id: openai-plugin-manifest
+  conforms: true
+  evidence: 'https://humanbrowser.cloud/.well-known/ai-plugin.json schema_version v1, auth user_http bearer, api.type openapi -> https://humanbrowser.cloud/openapi.json.'
+- id: llms-txt
+  conforms: true
+  evidence: https://humanbrowser.cloud/llms.txt (2,851 bytes) and /llms-full.txt (7,796 bytes), both served and provider-authored.
+- id: openapi-3.1
+  conforms: true
+  version: 3.1.0
+  evidence: openapi/humanbrowser-cloud-openapi.json — 6 operations, 2 servers, 3 securitySchemes, 1 schema.
+- id: http-bearer-auth
+  conforms: true
+  evidence: bearerAuth securityScheme; card securitySchemes.http_bearer; observed WWW-Authenticate Bearer on /mcp.
+- id: rfc9457
+  name: Problem Details for HTTP APIs
+  conforms: false
+  evidence: 'Error schema is {error, message, hint, retry_after_seconds}; no application/problem+json anywhere.'
+- id: rfc9116
+  name: security.txt
+  conforms: false
+  evidence: 404 on /.well-known/security.txt and /security.txt on both hosts. A disclosure policy exists only in the npm package SECURITY.md.
+- id: oidc
+  conforms: false
+  evidence: /.well-known/openid-configuration 404 on both hosts.
+- id: rfc9727
+  name: API Catalog
+  conforms: false
+  evidence: /.well-known/api-catalog 404 on both hosts.
+- id: apis-json
+  conforms: false
+  evidence: /apis.json, /apis.yml and /.well-known/apis.json 404 on both hosts.
+- id: rfc8594
+  name: Sunset header
+  conforms: false
+  evidence: No Sunset or Deprecation header documented; no deprecation policy.
+- id: idempotency
+  conforms: false
+  evidence: No Idempotency-Key on any write (conventions/humanbrowser-cloud-conventions.yml).
+- id: pagination
+  conforms: false
+  evidence: No paginated list operation.
+- id: gdpr
+  name: UK GDPR / EU GDPR
+  conforms: true
+  verification: self-declared
+  evidence: 'Privacy Policy (2026-05-15) names both regimes, Article 6 bases, data-subject rights with a 30-day response, SCCs / UK IDTA for transfers, and ICO notification within 72 hours of a breach.'
+- id: soc2
+  conforms: false
+  evidence: No certification or trust center claimed anywhere on the surface (probe-security-programs.py found none; /trust 404).
+- id: x402
+  conforms: false
+  evidence: 'Payment is prepaid balance via Stripe/0xProcessing; HTTP 402 is used for balance exhaustion (quota_exceeded), not as an x402 payment challenge.'

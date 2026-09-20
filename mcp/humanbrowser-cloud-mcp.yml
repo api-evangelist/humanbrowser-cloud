@@ -1,0 +1,105 @@
+generated: '2026-09-19'
+method: probed
+status: published
+source: https://agent.humanbrowser.cloud/mcp
+docs: https://humanbrowser.cloud/docs/mcp
+summary: >-
+  Human Browser ships the same MCP server two ways: a hosted Streamable HTTP endpoint at
+  https://agent.humanbrowser.cloud/mcp (the host that also serves the A2A endpoint, the agent card and the
+  OAuth discovery documents) and a stdio server inside the npm package @virixlabs/humanbrowser (`npx -y
+  @virixlabs/humanbrowser mcp`). Both take the one hb_live_ bearer token. The hosted endpoint is
+  auth-gated at the transport: an anonymous initialize and tools/list both return HTTP 401 with
+  WWW-Authenticate: Bearer realm="humanbrowser-mcp" and {"error":"unauthorized","hint":"Authorization:
+  Bearer hb_live_<token>"}; a GET returns 405. So the live tool list could not be introspected. The tool
+  list below is the one the provider ships in the package source (mcp/server.js in the 5.0.3 tarball) and
+  repeats in the agent card's MCP section — three tools with real JSON-Schema inputSchemas — and it is
+  recorded as such, not as a live tools/list. The provider's own /docs/mcp page lists a DIFFERENT six-tool
+  surface (spawn_session, run_task, observe_session, list_sessions, close_session, take_screenshot, with
+  readOnlyHint/destructiveHint annotations); which list the hosted endpoint actually returns cannot be
+  settled without a token, and the discrepancy is recorded rather than resolved. RFC 9728 protected-resource
+  metadata for the MCP resource and RFC 8414 authorization-server metadata are both served on the agent host
+  (see well-known/), advertising OAuth 2.1 with PKCE, client-ID metadata documents and scopes mcp:run /
+  mcp:read — but the docs, the card and the package all authenticate with the static bearer token, and the
+  metadata's token_endpoint, registration_endpoint and service_documentation URLs all 404 on GET.
+deployment:
+  mode: both
+  endpoint: https://agent.humanbrowser.cloud/mcp
+  install: npx -y @virixlabs/humanbrowser mcp
+  package: https://www.npmjs.com/package/@virixlabs/humanbrowser
+  auth: api-key
+  verified: probed
+  note: >-
+    auth is the hb_live_ prepaid-balance token sent as Authorization: Bearer (remote) or the HB_TOKEN /
+    HUMANBROWSER_API_TOKEN environment variable (stdio). The remote endpoint refuses non-Bearer auth and the
+    card says never to put the token in a query string. OAuth 2.1 metadata is published for this resource
+    (scopes mcp:run, mcp:read; PKCE S256; CIMD client ids or DCR ids of the form hbc_<32hex>) but no page
+    documents an OAuth flow for MCP clients, /docs/oauth 404s, and POST /token without a grant answers
+    unsupported_grant_type — so the OAuth door exists but is undocumented. Claude Desktop is told to wrap the
+    hosted endpoint with mcp-remote; Cursor and Cline use the URL directly.
+servers:
+- id: humanbrowser-remote
+  name: humanbrowser MCP (hosted)
+  endpoint: https://agent.humanbrowser.cloud/mcp
+  transport: streamable-http
+  http_methods: [POST]
+  auth: bearer token (hb_live_...)
+  status: live
+  rate_limit: 60 requests per 60 s per token (agent card, MCP section)
+  probe:
+    fetched: '2026-09-19'
+    initialize:
+      http_status: 401
+      www_authenticate: Bearer realm="humanbrowser-mcp"
+      body: '{"error":"unauthorized","hint":"Authorization: Bearer hb_live_<token>"}'
+      cors_headers: 'access-control-allow-headers: Content-Type, Authorization, Mcp-Session-Id, MCP-Protocol-Version; access-control-expose-headers: Mcp-Session-Id'
+    tools_list:
+      http_status: 401
+      note: Gated; not introspected. The Mcp-Session-Id / MCP-Protocol-Version CORS allow-list is consistent with a Streamable HTTP server behind the 401.
+    get_request: {http_status: 405, body: 49 bytes application/json}
+    protected_resource_metadata:
+      url: https://agent.humanbrowser.cloud/.well-known/oauth-protected-resource
+      http_status: 200
+      resource: https://agent.humanbrowser.cloud/mcp
+      authorization_servers: [https://agent.humanbrowser.cloud]
+      scopes_supported: [mcp:run, mcp:read]
+      resource_documentation: https://humanbrowser.cloud/docs/mcp
+- id: humanbrowser-stdio
+  name: '@virixlabs/humanbrowser mcp'
+  transport: stdio
+  install: npx -y @virixlabs/humanbrowser mcp
+  package: '@virixlabs/humanbrowser'
+  version: 5.0.3
+  published: '2026-06-17'
+  auth: HB_TOKEN env (legacy alias HUMANBROWSER_API_TOKEN)
+  status: published
+  source: registry.npmjs.org tarball humanbrowser-5.0.3.tgz — package/mcp/server.js
+  note: >-
+    A thin shim over the A2A endpoint: every tool call becomes message/send + tasks/get against
+    HUMANBROWSER_API_BASE (default https://agent.humanbrowser.cloud). Built on @modelcontextprotocol/sdk
+    ^1.29.0; declares capabilities {tools, logging}; serverInfo name "@virixlabs/humanbrowser".
+tools:
+  source: package source mcp/server.js (5.0.3) — identical names and arguments to the agent card's MCP section; NOT a live tools/list
+  file: mcp/humanbrowser-cloud-mcp-tools.json
+  count: 3
+  list:
+  - name: humanbrowser_run
+    description: Run a Human Browser cloud task; blocks until a terminal state; returns the final answer plus a live viewer URL.
+    input: {goal: string (required), country: 'string (ISO-2, optional)', profile: 'string (optional)'}
+    source_operation: openapi/humanbrowser-cloud-openapi.json#runA2ATask (message/send then tasks/get)
+  - name: humanbrowser_stream
+    description: Same as humanbrowser_run but emits MCP notifications/progress while the task is in flight.
+    input: {goal: string (required), country: 'string (optional)', profile: 'string (optional)'}
+    source_operation: openapi/humanbrowser-cloud-openapi.json#runA2ATask (message/send with onStatus polling)
+  - name: humanbrowser_viewer_url
+    description: Fetch the live viewer URL for a previously started task by id.
+    input: {task_id: string (required)}
+    source_operation: openapi/humanbrowser-cloud-openapi.json#runA2ATask (tasks/get -> metadata.viewer_url)
+documented_but_unverified:
+  source: https://humanbrowser.cloud/docs/mcp
+  note: >-
+    The MCP docs page describes six tools with MCP annotations — spawn_session (write, open-world), run_task
+    (write, open-world, streams progress), observe_session (read-only), list_sessions (read-only),
+    close_session (destructive, "Idempotent"), take_screenshot (read-only, returns a base64 image block).
+    None of these names appears in the package source or the agent card, and tools/list is gated, so they
+    are recorded as documented and unverified.
+  tools: [spawn_session, run_task, observe_session, list_sessions, close_session, take_screenshot]

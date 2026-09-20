@@ -1,0 +1,162 @@
+generated: '2026-09-19'
+method: probed
+source: >-
+  Live GET probes of the closed /.well-known/* path list on humanbrowser.cloud (website, docs and REST
+  account API host — OpenAPI servers[0]) and agent.humanbrowser.cloud (A2A, MCP and OAuth host — OpenAPI
+  servers[1], the agent card's url, and the MCP endpoint host), 2026-09-19. www.humanbrowser.cloud does not
+  resolve (NXDOMAIN) and was not probed. Every row below is a request that was issued; every status is the
+  one returned.
+summary:
+  hosts_probed: 2
+  paths_probed: 34
+  documents_served: 5
+  hit_count: 5
+  path_echo_control: passed
+  note: >-
+    Five real documents across two hosts. On the apex: the A2A agent card (byte-identical to the agent
+    host's copy) and an OpenAI-plugin manifest (ai-plugin.json) whose api.url points at the OpenAPI. On the
+    agent host: the agent card, RFC 8414 authorization-server metadata (issuer https://agent.humanbrowser.cloud,
+    PKCE S256, authorization_code + refresh_token, client_id_metadata_document_supported true, DCR
+    registration_endpoint, scopes mcp:run / mcp:read) and RFC 9728 protected-resource metadata for the MCP
+    resource https://agent.humanbrowser.cloud/mcp naming that same authorization server — the MCP host is
+    exactly where 98.5% of protected-resource documents live and this one is no exception; the apex 404s
+    both OAuth paths. No security.txt on either host (the disclosure policy lives in the npm package — see
+    security/), no OIDC discovery, no RFC 9727 API catalog, no APIs.json at any of the three locations, no
+    UCP/ACP/AAuth. The apex's misses are the site's fixed 26,914-byte HTML 404 page (status 404, not a
+    soft-200); the agent host's misses are 40-91-byte JSON 404s ({"error":"not-found","path":...}). A
+    negative-control path that cannot exist 404s on both, so the 200s are served documents. Two of the
+    authorization-server metadata's endpoints are inconsistent with what the host serves: token_endpoint
+    /token answers a POST (400 unsupported_grant_type) but GET 404s; registration_endpoint /register 404s on
+    GET; service_documentation https://humanbrowser.cloud/docs/oauth 404s; and the OpenAPI's oauth2 tokenUrl
+    https://agent.humanbrowser.cloud/oauth/token 404s on both GET and POST.
+hosts:
+- host: humanbrowser.cloud
+  role: Website, docs, viewer and REST account API (OpenAPI servers[0]); Cloudflare in front of Vercel
+  soft_404_control: {path: /.well-known/humanbrowser-cloud-negative-control-4b9e1d.json, status: 404, bytes: 26914, content_type: text/html}
+  documents:
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: application/json
+    bytes: 58101
+    file: ../a2a/humanbrowser-cloud-agent-card.json
+    standard: A2A Agent Card (protocolVersion 0.3.0)
+    note: sha256 d4761d3f…cfb7, identical to the agent-host copy. Graded conformant in a2a/humanbrowser-cloud-a2a.yml.
+  - path: /.well-known/agent.json
+    status: 404
+    note: Legacy pre-0.3 agent-card path. Not served.
+  - path: /.well-known/ai-plugin.json
+    status: 200
+    content_type: application/json
+    bytes: 1018
+    file: humanbrowser-cloud-ai-plugin.json
+    standard: OpenAI plugin manifest (schema_version v1)
+    note: 'name_for_model human_browser; auth user_http bearer; api.type openapi, api.url https://humanbrowser.cloud/openapi.json; contact_email general@virixlabs.com; legal_info_url /terms.'
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+    note: Served on agent.humanbrowser.cloud instead (below).
+  - path: /.well-known/oauth-protected-resource
+    status: 404
+    note: The MCP resource is on the agent host; see below.
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/api-catalog.json
+    status: 404
+  - path: /.well-known/ucp.json
+    status: 404
+  - path: /.well-known/acp.json
+    status: 404
+  - path: /.well-known/aauth-resource.json
+    status: 404
+  - path: /.well-known/apis.json
+    status: 404
+  - path: /apis.json
+    status: 404
+  - path: /apis.yml
+    status: 404
+- host: agent.humanbrowser.cloud
+  role: A2A JSON-RPC endpoint (/a2a), MCP Streamable HTTP endpoint (/mcp), OAuth authorization server, agent-card host (OpenAPI servers[1])
+  soft_404_control: {path: /.well-known/humanbrowser-cloud-negative-control-4b9e1d.json, status: 404, bytes: 91, content_type: application/json}
+  documents:
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: application/json
+    bytes: 58101
+    file: ../a2a/humanbrowser-cloud-agent-card.json
+    standard: A2A Agent Card (protocolVersion 0.3.0)
+    note: The canonical copy — this host is the card's own url. Saved verbatim under a2a/.
+  - path: /.well-known/agent.json
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 200
+    content_type: application/json
+    bytes: 736
+    file: humanbrowser-cloud-oauth-authorization-server.json
+    standard: RFC 8414 OAuth 2.0 Authorization Server Metadata
+    fields:
+      issuer: https://agent.humanbrowser.cloud
+      authorization_endpoint: https://agent.humanbrowser.cloud/authorize
+      token_endpoint: https://agent.humanbrowser.cloud/token
+      registration_endpoint: https://agent.humanbrowser.cloud/register
+      revocation_endpoint: https://agent.humanbrowser.cloud/revoke
+      response_types_supported: [code]
+      grant_types_supported: [authorization_code, refresh_token]
+      code_challenge_methods_supported: [S256]
+      token_endpoint_auth_methods_supported: [none, client_secret_post]
+      scopes_supported: [mcp:run, mcp:read]
+      client_id_metadata_document_supported: true
+      service_documentation: https://humanbrowser.cloud/docs/oauth
+    endpoint_probes:
+    - {url: 'https://agent.humanbrowser.cloud/authorize', method: GET, status: 400, body: '{"error":"unsupported_response_type","error_description":"response_type must be ''code''"}'}
+    - {url: 'https://agent.humanbrowser.cloud/authorize?response_type=code&client_id=probe&...', method: GET, status: 400, body: '{"error":"invalid_client","error_description":"client_id must be CIMD URL (https://) or DCR id (hbc_<32hex>)"}', note: 'A live OAuth 2.1 authorization endpoint that accepts client-ID metadata documents or dynamically registered clients.'}
+    - {url: 'https://agent.humanbrowser.cloud/token', method: GET, status: 404}
+    - {url: 'https://agent.humanbrowser.cloud/token', method: POST, status: 400, body: '{"error":"unsupported_grant_type","error_description":"grant_type must be authorization_code or refresh_token"}', note: 'Live; POST-only.'}
+    - {url: 'https://agent.humanbrowser.cloud/register', method: GET, status: 404, note: 'Not POSTed — dynamic client registration would create a client.'}
+    - {url: 'https://humanbrowser.cloud/docs/oauth', method: GET, status: 404, note: 'The service_documentation URL is dead.'}
+  - path: /.well-known/oauth-protected-resource
+    status: 200
+    content_type: application/json
+    bytes: 290
+    file: humanbrowser-cloud-oauth-protected-resource.json
+    standard: RFC 9728 OAuth 2.0 Protected Resource Metadata
+    fields:
+      resource: https://agent.humanbrowser.cloud/mcp
+      authorization_servers: [https://agent.humanbrowser.cloud]
+      scopes_supported: [mcp:run, mcp:read]
+      bearer_methods_supported: [header]
+      resource_documentation: https://humanbrowser.cloud/docs/mcp
+      resource_name: humanbrowser MCP
+    note: Names the MCP endpoint as the protected resource and the same host as its authorization server. /.well-known/oauth-protected-resource/mcp (the path-suffixed form) 404s.
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/api-catalog.json
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/ucp.json
+    status: 404
+  - path: /.well-known/acp.json
+    status: 404
+  - path: /.well-known/aauth-resource.json
+    status: 404
+  - path: /.well-known/apis.json
+    status: 404
+  - path: /apis.json
+    status: 404
+  - path: /apis.yml
+    status: 404
+- host: www.humanbrowser.cloud
+  role: not a host — NXDOMAIN
+  documents: []
+  note: 'curl: Could not resolve host; dig +short returns no records. Not probed.'

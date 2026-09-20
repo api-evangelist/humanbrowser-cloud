@@ -1,0 +1,134 @@
+generated: '2026-09-19'
+method: derived
+source: mcp/humanbrowser-cloud-mcp-tools.json (package source, 5.0.3) and a2a/humanbrowser-cloud-agent-card.json (live card) bound to openapi/humanbrowser-cloud-openapi.json
+surfaces:
+  openapi:
+    file: openapi/humanbrowser-cloud-openapi.json
+    url: https://humanbrowser.cloud/openapi.json
+    operations: 6
+    gated: false
+    note: >-
+      Every operation carries an operationId. Five are the account API on humanbrowser.cloud; the sixth,
+      runA2ATask (POST /a2a), is the JSON-RPC endpoint on agent.humanbrowser.cloud described as one REST
+      operation — so every agent-side tool and skill binds to that single operationId, differentiated by
+      the JSON-RPC method and message shape inside it.
+  mcp:
+  - url: https://agent.humanbrowser.cloud/mcp
+    gated: true
+    note: tools/list answers 401 anonymously. Tool names and inputSchemas taken from the npm package's stdio server, which the card says are the same three tools the hosted endpoint exposes.
+  - install: npx -y @virixlabs/humanbrowser mcp
+    gated: false
+    note: stdio; TOOLS constant read from mcp/server.js.
+  graphql: null
+  a2a:
+    url: https://agent.humanbrowser.cloud/a2a
+    card: a2a/humanbrowser-cloud-agent-card.json
+    gated: true
+    protocol_version: 0.3.0
+    skills: 9
+    custom_actions: 12
+    note: Skills are selected implicitly from the message parts; all nine run through message/send or message/stream.
+crosswalk:
+- tool: humanbrowser_run
+  surface: mcp
+  category: browser-task
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: 'message/send with a TextPart goal (+ metadata.country, metadata.profile), then tasks/get until terminal — read directly from runOnCloud in scripts/cloud-client.js. Input {goal, country?, profile?} is a strict subset of the A2A message + metadata.'
+- tool: humanbrowser_stream
+  surface: mcp
+  category: browser-task
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: Same call with onStatus polling surfaced as MCP notifications/progress.
+- tool: humanbrowser_viewer_url
+  surface: mcp
+  category: session-observation
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: 'tasks/get {id} -> metadata.viewer_url | viewerUrl.'
+- tool: browser_task
+  surface: a2a
+  category: browser-task
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+- tool: login_and_scrape
+  surface: a2a
+  category: authenticated-scraping
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: TextPart + DataPart {login, password, totp?} with metadata.sensitive=true.
+- tool: meta_business_workflow
+  surface: a2a
+  category: authenticated-workflow
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: metadata.engine=adspower, metadata.profile=<account_slug>, sensitive DataPart {cookies, user_agent, proxy}.
+- tool: fill_form
+  surface: a2a
+  category: form-fill
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: TextPart + non-sensitive DataPart field map.
+- tool: scrape_url
+  surface: a2a
+  category: extraction
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: Result JSON in artifacts[0].data.
+- tool: relay_reverse_api
+  surface: a2a
+  category: reverse-api
+  rest: [runA2ATask]
+  binding: rest
+  confidence: medium
+  note: 'metadata.engine=relay; the skill text says "Discover mapped domains via GET /relay/recipes" but that path 404s anonymously on the agent host and is not in the OpenAPI.'
+- tool: hostile_site_solver
+  surface: a2a
+  category: anti-bot
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: metadata.engine=cua or auto-router.
+- tool: email_verified_signup
+  surface: a2a
+  category: onboarding-automation
+  rest: [runA2ATask]
+  binding: rest
+  confidence: high
+  note: sensitive DataPart {email, password, imap:{host,port,user,pass}}.
+- tool: network_discovery
+  surface: a2a
+  category: reverse-api
+  rest: [runA2ATask]
+  binding: rest
+  confidence: medium
+  note: 'Params url, country, duration_ms, scroll, reload, match_url, freshness_fields[]; the card also lists a customAction "actions/discover_endpoints" that appears to be the same capability.'
+mcp_only:
+- tool: 'actions/* custom JSON-RPC methods (switch_proxy_country, get_cost_snapshot, list_engines, list_countries, get_page_diagnostics, get_screenshots, list_models, list_learned_apis, call_site_api, upload_file, actions/discover_endpoints, list_remote_providers)'
+  surface: a2a
+  reason: Provider-specific JSON-RPC methods on POST /a2a with their own params schemas in the card; they have no REST twin and no MCP tool in the shipped package.
+- tool: 'spawn_session, run_task, observe_session, list_sessions, close_session, take_screenshot'
+  surface: mcp (documented on /docs/mcp only)
+  reason: Documented with MCP annotations on the docs page but absent from the package source and the card; unverifiable while tools/list is gated. Recorded, not bound.
+rest_only:
+- capability: account
+  operations: [claimTrial, getAccount, topUp, getPlans, getUsage]
+  note: The card tells agents to buy self-service via POST /api/buy (crypto), which is not in the OpenAPI either; getPlans is the pricing_json_url the card names.
+coverage:
+  mcp_tools_named: 3
+  mcp_tools_bound: 3
+  a2a_skills_named: 9
+  a2a_skills_bound: 9
+  mcp_only: 2
+  rest_operations_total: 6
+  rest_operations_with_tool: 1
+  rest_operations_without_tool: 5

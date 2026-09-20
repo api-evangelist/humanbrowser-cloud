@@ -1,0 +1,54 @@
+# Human Browser
+
+> Cloud Chromium for AI agents. Drive a real residential-IP browser via A2A 1.0, MCP, or REST. Live viewer + human-in-the-loop takeover.
+
+humanbrowser.cloud is a hosted browser-automation platform purpose-built for AI agents. Agents send natural-language goals; the platform runs a real Chromium session on a clean residential connection, observes via a live viewer URL the user can watch and take over at any moment.
+
+## Endpoints
+
+- **A2A 1.0:** https://agent.humanbrowser.cloud/a2a (JSON-RPC + SSE, Bearer-token auth)
+- **MCP:** https://agent.humanbrowser.cloud/mcp (Streamable HTTP transport) OR via npm `npx -y @virixlabs/humanbrowser mcp`
+- **REST account API:** https://humanbrowser.cloud/api/{trial-balance,account,topup,buy,spawn}
+- **Agent Card:** https://agent.humanbrowser.cloud/.well-known/agent-card.json
+
+## Quick links
+
+- Full API reference: https://humanbrowser.cloud/llms-full.txt
+- Agent-mode docs: https://humanbrowser.cloud/account (toggle Agent mode pill bottom-right)
+- MCP setup guide: https://humanbrowser.cloud/docs/mcp
+- A2A protocol page: https://humanbrowser.cloud/a2a
+- Pricing: https://humanbrowser.cloud/install
+- GitHub OSS: https://github.com/VirixLabs/humanbrowser
+- npm: @virixlabs/humanbrowser
+- Custom GPT: https://humanbrowser.cloud/chatgpt
+- Public benchmarks: https://github.com/VirixLabs/stealth-benchmark
+
+## Pricing (real numbers)
+
+- $0.10 per browser-minute (session runtime)
+- $4 per GB residential proxy bandwidth
+- $0.005 per solved CAPTCHA challenge (human-in-the-loop)
+- $0.005-$0.05 per 1K AI tokens (depends on model)
+- Typical agentic task: $0.13-0.25 first run, $0.03-0.05 cached
+- $10 free trial credit on signup, no card required
+- No subscription. No auto-renew. Balance never expires.
+
+## Capabilities
+
+- 190+ residential country pools (clean network egress)
+- Vision-LLM-driven agent loop (Claude Sonnet 4.6 / GPT-5.1 / Gemini 2.5 Flash Lite / Kimi-K1 / hybrid CUA)
+- Live viewer URL per session (share with end user to watch live)
+- One-click human takeover for login / 2FA / payment / judgment calls
+- 12 CAPTCHA challenge types handled (with human-in-the-loop fallback)
+- MCP server (npm-distributed) + A2A 1.0 endpoint + Custom GPT in OpenAI store
+
+## Compliance
+
+Human Browser is positioned for legitimate, user-authorized web tasks: research, monitoring, form-fill on services the user owns credentials for, gathering public data, comparison shopping. It is not marketed or operated as a tool for circumventing access controls, evading bot detection, or scraping behind authentication walls without the data subject's permission. Acceptable use: https://humanbrowser.cloud/terms
+
+## Contact
+
+- Email: general@virixlabs.com
+- Telegram: @virixlabs
+- GitHub Issues: https://github.com/VirixLabs/humanbrowser/issues
+- Built by Virix Labs Ltd UK (Companies House #16325097)

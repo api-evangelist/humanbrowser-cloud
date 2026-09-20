@@ -64,5 +64,10 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Virix Labs is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry) and added to the network as a stub for full-pipeline profiling.
-- https://humanbrowser.cloud/
+Virix Labs (Virix Ltd, London, England & Wales no. 16325097) builds and operates Human Browser at humanbrowser.cloud — a hosted cloud Chromium for AI agents that runs a natural-language browser goal on a residential IP behind a live viewer a person can watch and take over. The runtime is exposed as an A2A 0.3.0 agent (nine skills, `agent.humanbrowser.cloud/a2a`), a Model Context Protocol server (hosted at `agent.humanbrowser.cloud/mcp` and as a stdio server in the npm package `@virixlabs/humanbrowser`), a six-operation OpenAPI 3.1.0 REST account API, an OpenAI plugin manifest and an llms.txt. Profiled by the API Evangelist enrichment pipeline on 2026-09-19 from those public surfaces only; the provider's hosted endpoints are bearer-gated and were not invoked.
+
+- Website: https://humanbrowser.cloud/
+- Docs: https://humanbrowser.cloud/docs
+- OpenAPI: https://humanbrowser.cloud/openapi.json
+- Agent card: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+- npm: https://www.npmjs.com/package/@virixlabs/humanbrowser

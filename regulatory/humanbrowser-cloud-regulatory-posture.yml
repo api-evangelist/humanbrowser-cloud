@@ -1,0 +1,81 @@
+generated: '2026-09-19'
+method: searched
+probe: true
+source: https://humanbrowser.cloud/privacy
+docs:
+- https://humanbrowser.cloud/terms
+- https://humanbrowser.cloud/refund
+signals:
+  data_subject_request:
+    url: https://humanbrowser.cloud/privacy
+    section: '9. Your rights'
+    channel: 'email (address is Cloudflare-obfuscated on the page; the Privacy Policy, Terms and npm metadata name general@virixlabs.com as the company contact) with subject "Data request"'
+    stated_sla: 'We respond within 30 days.'
+    rights_named: [access, correction, deletion (right to be forgotten), portability (machine-readable copy), objection/restriction, withdrawal of consent for analytics/advertising cookies, complaint to the UK ICO or local DPA]
+    evidence:
+    - source: https://humanbrowser.cloud/privacy
+      http_status: 200
+      fetched: '2026-09-19'
+      quote: >-
+        "To exercise any of these rights email [...] with the subject "Data request" and the email address
+        tied to your account. We respond within 30 days."
+    note: A documented request process with a channel and a response period inside the Privacy Policy (last updated 2026-05-15); no dedicated intake page (/privacy/requests 404) and no API endpoint.
+  subprocessors:
+    url: https://humanbrowser.cloud/privacy
+    section: '5. Sharing your data'
+    dated: '2026-05-15'
+    entries:
+    - {vendor: Stripe, Inc., purpose: card payments}
+    - {vendor: 0xProcessing, purpose: cryptocurrency payments}
+    - {vendor: Decodo and other residential proxy providers, purpose: 'routing instructions only — "never your account email"'}
+    - {vendor: Vercel Inc., purpose: website hosting}
+    - {vendor: Google LLC, purpose: analytics (GA4) and ads conversion tracking}
+    - {vendor: Microsoft Corporation, purpose: Clarity session analytics}
+    - {vendor: Contabo, purpose: servers}
+    - {vendor: Gmail, purpose: support inbox}
+    transfers: 'Section 6: Stripe, Google, Microsoft and Vercel operate in the United States; transfers rely on Standard Contractual Clauses, the UK International Data Transfer Addendum, or equivalent safeguards.'
+    evidence:
+    - source: https://humanbrowser.cloud/privacy
+      http_status: 200
+      fetched: '2026-09-19'
+      quote: >-
+        "We share data with the following categories of processors: Stripe, Inc. — card payments;
+        0xProcessing — cryptocurrency payments; Decodo and other residential proxy providers — we send
+        routing instructions but never your account email; Vercel Inc. — website hosting; Google LLC —
+        analytics (GA4) and ads conversion tracking; Microsoft Corporation — Clarity session analytics; Cloud
+        and email infrastructure — Contabo (servers), Gmail (support inbox)."
+    note: A named processor list with purposes on a dated page; prose inside the privacy policy rather than a standalone subprocessor table (/legal/subprocessors 404), and no change-notification mechanism beyond the policy's own 14-day email notice for material changes.
+  incident_notification:
+    url: https://humanbrowser.cloud/privacy
+    section: '10. Security'
+    stated_period: 'within 72 hours as required by UK GDPR'
+    evidence:
+    - source: https://humanbrowser.cloud/privacy
+      http_status: 200
+      fetched: '2026-09-19'
+      quote: >-
+        "No system is perfectly secure — if we discover a breach affecting your personal data we will
+        notify you and the ICO within 72 hours as required by UK GDPR."
+    note: A customer-facing breach-notification commitment with a stated period, tied to the regulator (ICO). Verbatim; the period is the statutory one restated.
+absent:
+  probed:
+  - {url: 'https://humanbrowser.cloud/accessibility', status: 404}
+  - {url: 'https://humanbrowser.cloud/accessibility/vpat', status: 404}
+  - {url: 'https://humanbrowser.cloud/legal/subprocessors', status: 404}
+  - {url: 'https://humanbrowser.cloud/legal/dpa', status: 404}
+  - {url: 'https://humanbrowser.cloud/privacy/requests', status: 404}
+  - {url: 'https://humanbrowser.cloud/transparency', status: 404}
+  - {url: 'https://humanbrowser.cloud/trust', status: 404}
+  - {url: 'https://humanbrowser.cloud/security/sbom', status: 404}
+  - {url: 'https://humanbrowser.cloud/docs/data-residency', status: 404}
+  - {url: 'https://humanbrowser.cloud/ai', status: 404}
+  - {url: 'https://humanbrowser.cloud/ai/transparency', status: 404}
+  - {url: 'https://humanbrowser.cloud/legal/report-content', status: 404}
+  not_recorded:
+  - {signal: age_assurance, why: 'Privacy 11 and Terms 3 state the service is not for under-18s and require users to be 18+, but no verification mechanism is described — an age statement, not age assurance.'}
+  - {signal: ai_transparency, why: 'The product is openly an LLM-driven agent (model names on /agent, the card and llms.txt) but no Art. 50-style disclosure page or statement exists; the site''s marketing is not recorded as a transparency artifact.'}
+  - {signal: support_lifetime, why: 'Terms 8 promise 30 days'' notice and a refund if the Service is discontinued; that is a termination notice, not a product support period.'}
+  - {signal: data_residency, why: 'Privacy 6 names US processors and UK/EU safeguards but publishes no residency choice or region commitment.'}
+  - {signal: sbom, why: 'search only — none published.'}
+  - {signal: exit_assistance, why: 'Privacy 9 promises a portable copy of personal data; nothing addresses migration of profiles, sessions or balances.'}
+  - {signal: global_privacy_control, why: 'no published statement; not tested by header, per contract.'}

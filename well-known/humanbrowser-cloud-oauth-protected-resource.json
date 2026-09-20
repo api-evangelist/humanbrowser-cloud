@@ -1,0 +1,1 @@
+{"resource":"https://agent.humanbrowser.cloud/mcp","authorization_servers":["https://agent.humanbrowser.cloud"],"scopes_supported":["mcp:run","mcp:read"],"bearer_methods_supported":["header"],"resource_documentation":"https://humanbrowser.cloud/docs/mcp","resource_name":"humanbrowser MCP"}

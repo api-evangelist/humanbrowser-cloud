@@ -1,18 +1,142 @@
 aid: humanbrowser-cloud
 name: Virix Labs
-description: 'Virix Labs is a company surfaced via the API Evangelist harvest backlog (source: a2a-registry)
-  and added to the network as a stub for full-pipeline profiling.'
+description: >-
+  Virix Labs is the trading name of Virix Ltd, a London software company (England & Wales no. 16325097,
+  incorporated March 2025) that builds and operates Human Browser at humanbrowser.cloud: a hosted "cloud
+  Chromium for AI agents" that runs a natural-language browser goal on a residential IP behind a live viewer
+  a person can watch and take over, with CAPTCHA handling, persistent per-token cookie profiles and metered
+  prepaid pricing ($0.10 per browser-minute, $4/GB bandwidth, $0.005 per solved CAPTCHA). The same runtime is
+  exposed four ways: an A2A 0.3.0 agent card at /.well-known/agent-card.json with nine skills and a JSON-RPC
+  endpoint at agent.humanbrowser.cloud/a2a; a Model Context Protocol server both hosted
+  (agent.humanbrowser.cloud/mcp, with RFC 9728 protected-resource and RFC 8414 authorization-server metadata)
+  and shipped as a stdio server in the npm package @virixlabs/humanbrowser; a six-operation OpenAPI 3.1.0
+  REST account API at humanbrowser.cloud/openapi.json; and an OpenAI plugin manifest plus llms.txt. Virix
+  Labs also sells agent-run marketing and web-operations services at virixlabs.com.
 url: https://raw.githubusercontent.com/api-evangelist/humanbrowser-cloud/refs/heads/main/apis.yml
+image: https://humanbrowser.cloud/logo-512.png
 x-type: company
 x-source: harvest:a2a-registry
-x-tier: stub
-x-tier-reason: harvest
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-09-19 (local-v3; was a2a-registry harvest stub)
 specificationVersion: '0.20'
 created: '2026-09-19'
 modified: '2026-09-19'
 tags:
-- Company
-apis: []
+- Browser Automation
+- Cloud Browser
+- AI Agents
+- A2A
+- MCP
+- Web Scraping
+- Residential Proxies
+- CAPTCHA Solving
+- Human-in-the-Loop
+- Computer Use
+- agent-native
+- United Kingdom
+tags_raw:
+- Browser automation
+- Cloud browser
+- AI agents
+- A2A
+- MCP
+- Web scraping
+- Residential proxies
+- CAPTCHA solving
+- Human-in-the-loop
+- Computer use
+- Agent-native
+- United Kingdom
+apis:
+- aid: humanbrowser-cloud:human-browser-api
+  name: Human Browser API
+  description: >-
+    The REST account side of Human Browser, published as OpenAPI 3.1.0 at https://humanbrowser.cloud/openapi.json
+    with servers[] https://humanbrowser.cloud (account) and https://agent.humanbrowser.cloud (A2A + MCP): claim
+    a free trial token by email (claimTrial), read the signed-in account (getAccount, session cookie), create
+    a Stripe or crypto top-up (topUp), read the unauthenticated rate sheet (getPlans), read usage (getUsage),
+    and runA2ATask, which is the JSON-RPC A2A endpoint described as one POST. Bearer hb_live_ tokens carry a
+    prepaid balance; an optional X-API-Version header (default 2026-08-01) pins the surface. A uniform
+    {error, message, hint, retry_after_seconds} envelope; no idempotency key on any write.
+  humanURL: https://humanbrowser.cloud/docs
+  baseURL: https://humanbrowser.cloud
+  tags:
+  - Browser Automation
+  - Cloud Browser
+  - AI Agents
+  - Billing
+  properties:
+  - type: OpenAPI
+    url: openapi/humanbrowser-cloud-openapi.json
+  - type: OpenAPI
+    name: Human Browser API OpenAPI (provider-hosted)
+    url: https://humanbrowser.cloud/openapi.json
+  - type: Documentation
+    url: https://humanbrowser.cloud/docs
+  - type: APIReference
+    url: https://humanbrowser.cloud/llms-full.txt
+  - type: Overlay
+    url: overlays/humanbrowser-cloud-openapi-overlay.yaml
+  - type: ErrorCatalog
+    url: errors/humanbrowser-cloud-problem-types.yml
+  - type: DataModel
+    url: data-model/humanbrowser-cloud-data-model.yml
+- aid: humanbrowser-cloud:humanbrowser-mcp-server
+  name: Human Browser MCP Server
+  description: >-
+    Model Context Protocol access to the same browser runtime, shipped two ways: a hosted Streamable HTTP
+    endpoint at https://agent.humanbrowser.cloud/mcp that requires the hb_live_ bearer token (anonymous
+    initialize and tools/list answer 401 with WWW-Authenticate: Bearer realm="humanbrowser-mcp"; 60 requests
+    per 60 s per token) and a stdio server inside the npm package (`npx -y @virixlabs/humanbrowser mcp`,
+    HB_TOKEN env). The package source exposes three tools — humanbrowser_run, humanbrowser_stream,
+    humanbrowser_viewer_url — with JSON-Schema inputSchemas; the provider's MCP docs page describes a
+    different six-tool surface that could not be verified. RFC 9728 protected-resource metadata names this
+    endpoint as an OAuth resource (scopes mcp:run, mcp:read) with an authorization server on the same host.
+  humanURL: https://humanbrowser.cloud/docs/mcp
+  baseURL: https://agent.humanbrowser.cloud/mcp
+  tags:
+  - MCP
+  - agent-native
+  - Browser Automation
+  properties:
+  - type: MCPServer
+    url: mcp/humanbrowser-cloud-mcp.yml
+  - type: MCPServer
+    name: Human Browser MCP endpoint (Streamable HTTP)
+    url: https://agent.humanbrowser.cloud/mcp
+  - type: ToolCrosswalk
+    url: mcp/humanbrowser-cloud-tool-crosswalk.yml
+  - type: Documentation
+    url: https://humanbrowser.cloud/docs/mcp
+- aid: humanbrowser-cloud:humanbrowser-a2a-agent
+  name: Human Browser A2A Agent
+  description: >-
+    Agent2Agent protocol surface: an agent card (protocolVersion 0.3.0, JSONRPC, version 5.1.0) served
+    byte-identically from https://agent.humanbrowser.cloud/.well-known/agent-card.json and the website apex,
+    advertising nine skills — browser_task, login_and_scrape, meta_business_workflow, fill_form, scrape_url,
+    relay_reverse_api, hostile_site_solver, email_verified_signup, network_discovery — reached through
+    message/send or message/stream (SSE) at POST https://agent.humanbrowser.cloud/a2a with tasks/get and
+    tasks/cancel, plus twelve provider "actions/*" JSON-RPC methods. Streaming, push notifications
+    (callback_url) and an input-required human-in-the-loop pause with a documented resume contract; every
+    call needs the hb_live_ bearer token (anonymous calls return HTTP 401 / JSON-RPC -32001). Graded
+    conformant against A2A 1.0.0 hard checks.
+  humanURL: https://humanbrowser.cloud/a2a
+  baseURL: https://agent.humanbrowser.cloud/a2a
+  tags:
+  - A2A
+  - agent-native
+  - Browser Automation
+  - Human-in-the-Loop
+  properties:
+  - type: AgentCard
+    url: a2a/humanbrowser-cloud-a2a.yml
+  - type: AgentCard
+    name: A2A Agent Card (provider-hosted)
+    url: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+  - type: Documentation
+    url: https://humanbrowser.cloud/a2a
+  - type: Webhooks
+    url: asyncapi/humanbrowser-cloud-webhooks.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
@@ -21,3 +145,86 @@ maintainers:
 common:
 - type: Website
   url: https://humanbrowser.cloud/
+- type: Documentation
+  url: https://humanbrowser.cloud/docs
+- type: APIReference
+  url: https://humanbrowser.cloud/openapi.json
+- type: GettingStarted
+  url: https://humanbrowser.cloud/install
+- type: Pricing
+  url: https://humanbrowser.cloud/install
+- type: Blog
+  url: https://humanbrowser.cloud/blog
+- type: Support
+  url: https://humanbrowser.cloud/contact
+- type: SignUp
+  url: https://humanbrowser.cloud/account
+- type: TermsOfService
+  url: https://humanbrowser.cloud/terms
+- type: PrivacyPolicy
+  url: https://humanbrowser.cloud/privacy
+- type: AgentCard
+  url: a2a/humanbrowser-cloud-a2a.yml
+- type: MCPServer
+  url: mcp/humanbrowser-cloud-mcp.yml
+- type: ToolCrosswalk
+  url: mcp/humanbrowser-cloud-tool-crosswalk.yml
+- type: WellKnown
+  url: well-known/humanbrowser-cloud-well-known.yml
+- type: LLMsTxt
+  url: llms/humanbrowser-cloud-llms.txt
+- type: LLMsTxt
+  name: llms.txt (provider-hosted)
+  url: https://humanbrowser.cloud/llms.txt
+- type: Packages
+  url: packages/humanbrowser-cloud-packages.yml
+- type: SDKs
+  url: packages/humanbrowser-cloud-packages.yml
+- type: CLI
+  url: cli/humanbrowser-cloud-cli.yml
+- type: Plans
+  url: plans/humanbrowser-cloud-plans-pricing.yml
+- type: RateLimits
+  url: rate-limits/humanbrowser-cloud-rate-limits.yml
+- type: Conformance
+  url: conformance/humanbrowser-cloud-conformance.yml
+- type: Lifecycle
+  url: lifecycle/humanbrowser-cloud-lifecycle.yml
+- type: Conventions
+  url: conventions/humanbrowser-cloud-conventions.yml
+- type: ErrorCatalog
+  url: errors/humanbrowser-cloud-problem-types.yml
+- type: DataModel
+  url: data-model/humanbrowser-cloud-data-model.yml
+- type: Sandbox
+  url: sandbox/humanbrowser-cloud-sandbox.yml
+- type: Webhooks
+  url: asyncapi/humanbrowser-cloud-webhooks.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: AgentSkill
+  name: human-browser (provider-published SKILL.md)
+  url: skills/humanbrowser-cloud-human-browser.md
+- type: Authentication
+  url: authentication/humanbrowser-cloud-authentication.yml
+- type: OAuthScopes
+  url: scopes/humanbrowser-cloud-scopes.yml
+- type: DomainSecurity
+  url: security/humanbrowser-cloud-domain-security.yml
+- type: VulnerabilityDisclosure
+  url: security/humanbrowser-cloud-vulnerability-disclosure.yml
+- type: Security
+  url: security/humanbrowser-cloud-vulnerability-disclosure.yml
+- type: AgenticAccess
+  url: agentic-access/humanbrowser-cloud-agentic-access.yml
+- type: DataSubjectRequest
+  url: regulatory/humanbrowser-cloud-regulatory-posture.yml
+- type: Subprocessors
+  url: regulatory/humanbrowser-cloud-regulatory-posture.yml
+- type: IncidentNotification
+  url: regulatory/humanbrowser-cloud-regulatory-posture.yml
+x-enrichment:
+  date: '2026-09-19'
+  status: enriched
+  artifacts_added: 32
+  pass: local-v3

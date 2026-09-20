@@ -1,0 +1,108 @@
+generated: '2026-09-19'
+method: derived
+source: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://humanbrowser.cloud/a2a
+- https://agent.humanbrowser.cloud/.well-known/agent-card.json
+summary: >-
+  The OpenAPI declares one component schema (Error) and inline response objects, so the graph below is
+  assembled from those inline shapes, the A2A page and the agent card. Two roots: the TOKEN (hb_live_...,
+  which is simultaneously the credential, the billing account and the isolation boundary for profiles) and
+  the TASK (an A2A Task on the agent host). A Session is the Chromium instance a Task runs in; a Profile is
+  the persisted cookie/storage namespace, per token, canonicalised from the first domain in the goal. There
+  are no $ref links between schemas; the contract links by id fields (token, task_id, session_id, profile,
+  req_id) and the A2A objects follow the protocol's Task / Message / Part / Artifact shapes.
+id_style:
+  format: prefixed opaque strings
+  prefixes:
+  - {entity: Token, example: 'hb_live_...', source: 'openapi bearerAuth description; docs'}
+  - {entity: Token (historical), example: 'hb_skill_...', source: 'package SKILL.md'}
+  - {entity: OAuth client (DCR), example: 'hbc_<32hex>', source: '/authorize error text'}
+  - {entity: Task, example: 'task_01HXZJ9PQK', source: llms-full.txt}
+  - {entity: Session, example: 'sid_8a3f2b (llms-full.txt) / s_<id> (card viewer_url_pattern)'}
+  - {entity: input-required request, example: 'req_[a-zA-Z0-9_]{4,32}', source: card extension input-required/v1}
+  - {entity: JSON-RPC id, example: 'rpc-1 / any', source: a2a page}
+entities:
+- name: Token
+  description: A prepaid-balance API token; the caller's identity for /a2a, /mcp and the token-scoped REST operations. Issued by claimTrial or on first top-up.
+  schemas: ['claimTrial 200 response {token, balance_usd}']
+  fields: [token, balance_usd, spent_usd, session_count, 'usage_tail[]', 'expires_at (trial)']
+  relationships:
+  - {has_many: Task, via: Authorization bearer}
+  - {has_many: Session, via: Authorization bearer, note: 'concurrency cap 5'}
+  - {has_many: Profile, via: token namespace}
+  - {has_many: TopUp, via: token}
+  - {has_many: UsageRow, via: token}
+  - {has_one: Account, via: owner, note: 'the dashboard login (hb_session cookie) that owns the token'}
+- name: Account
+  description: The dashboard identity (email, optional display name) reached with the hb_session cookie; getAccount returns the token, balance and session count.
+  schemas: ['getAccount 200 response {token, balance_usd, spent_usd, session_count}']
+  relationships:
+  - {has_one: Token, via: token}
+- name: TopUp
+  description: A Stripe or crypto checkout that adds balance; the REST response is a checkout URL, crypto adds wallet_address and amount_crypto.
+  schemas: ['topUp request {amount_usd >= 1, method stripe|crypto}', 'topUp 200 {url}']
+  relationships:
+  - {belongs_to: Token, via: bearer}
+- name: Plan
+  description: The rate sheet from getPlans — usage_rates plus three subscription-shaped plans with monthly_balance_usd, rollover_cap_usd and countries[].
+  schemas: []
+  relationships: []
+- name: UsageRow
+  description: A metered event {ts, kind (llm | browser-minute | proxy | captcha), cost_usd} in usage_tail / getUsage.
+  schemas: []
+  relationships:
+  - {belongs_to: Token}
+  - {belongs_to: Session, via: session metadata, note: 'live cost is shown on session metadata (Terms 4)'}
+- name: Task
+  description: An A2A Task — id, status {state, message}, metadata {session_id, viewer_url, estimated_cost_usd, profile, blocks, outcome, postmortem}, history, artifacts. States working | submitted | input-required | completed | failed | canceled.
+  schemas: ['runA2ATask request {jsonrpc "2.0", method, params}']
+  relationships:
+  - {belongs_to: Token}
+  - {belongs_to: Session, via: metadata.session_id, note: 'a session runs its queue one task at a time; up to 20 waiting'}
+  - {belongs_to: Profile, via: metadata.profile}
+  - {has_many: Artifact, via: 'artifacts[] / artifact-update events'}
+  - {has_many: InputRequest, via: input-required pause (req_id)}
+  - {has_many: Screenshot, via: actions/get_screenshots}
+- name: Session
+  description: One Chromium instance on a residential IP with a live viewer URL (https://humanbrowser.cloud/a/s_<id>?k=<key>), a country, an engine and a queue. Torn down on tasks/cancel or completion.
+  schemas: []
+  relationships:
+  - {belongs_to: Token}
+  - {belongs_to: Profile, via: cloned from the warm master profile}
+  - {has_many: Task, via: queue}
+  - {has_one: Viewer, via: viewer_url}
+  - {has_many: LearnedApiEndpoint, via: recorded network traffic (actions/list_learned_apis)}
+- name: Profile
+  description: A named cookie/localStorage/IndexedDB namespace per token, canonicalised from the goal's first domain (cp.adsy.com -> adsy); merged back after each successful task; failed tasks do not pollute it.
+  schemas: []
+  relationships:
+  - {belongs_to: Token}
+  - {has_many: Session}
+  - {has_one: Country, via: persisted proxy country on the profile meta}
+- name: Message
+  description: A2A Message {role, messageId, parts[], metadata}. Parts are TextPart (goal, may carry <verbatim> markers), DataPart (field map, or credentials with metadata.sensitive=true), FilePart (uri or bytes).
+  schemas: []
+  relationships:
+  - {belongs_to: Task, via: history / referenceTaskIds}
+- name: Artifact
+  description: The result — text answer, structured data (artifacts[0].data for scrape_url), and kind:file parts for anything the run downloaded.
+  schemas: []
+  relationships:
+  - {belongs_to: Task}
+- name: InputRequest
+  description: The input-required pause {req_id, kind text|url|email|otp|password|approval, sensitive, choice, timeout_s, deadline, summary, resume_hint}.
+  schemas: []
+  relationships:
+  - {belongs_to: Task}
+- name: Skill
+  description: One of nine advertised A2A skills; selected implicitly from the message shape, not by id.
+  schemas: []
+  relationships:
+  - {has_many: Task, via: implicit routing}
+- name: LearnedApiEndpoint
+  description: 'An internal API the target site''s own UI called during the token''s sessions — method, path, read/mutate flag, frequency, request/response shape; no bodies, no credentials (actions/list_learned_apis, call_site_api).'
+  schemas: []
+  relationships:
+  - {belongs_to: Token, via: 'only what YOUR OWN sessions produced'}
+  - {belongs_to: Domain}

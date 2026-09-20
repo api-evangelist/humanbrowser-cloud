@@ -1,0 +1,72 @@
+generated: '2026-09-19'
+method: searched
+source: https://agent.humanbrowser.cloud/.well-known/agent-card.json
+docs:
+- https://humanbrowser.cloud/a2a
+- https://humanbrowser.cloud/terms
+- https://humanbrowser.cloud/openapi.json
+limit_count: 5
+summary: >-
+  No requests-per-second ceiling is published for the REST account API and the OpenAPI declares no
+  rate-limit headers. The limits the provider does publish live in the agent card: a 60-requests-per-60-seconds
+  cap on the MCP endpoint per token, a concurrency cap of five simultaneous browser sessions per token
+  (over-cap answers 503 with retry_after_seconds in the body), and a per-session task queue of twenty (a
+  queued task answers 202 with position and queue_depth). The trial-token endpoint declares 429 in the
+  contract (one token per email, lifetime). Balance exhaustion is signalled with 402 quota_exceeded, not
+  429. None of these carry RateLimit-* or Retry-After headers in any published description; the retry hint
+  travels in the JSON body.
+rate_limits:
+- name: MCP requests per token
+  scope: per-token
+  limit: 60
+  window: 60s
+  metric: request
+  applies_to: [https://agent.humanbrowser.cloud/mcp]
+  source: 'agent card, MCP REMOTE ENDPOINT section — "rate-limited per token (default 60 req / 60s)"'
+  exhaustion_status: null
+  headers: []
+- name: Concurrent browser sessions per token
+  scope: per-token
+  limit: 5
+  window: concurrent
+  metric: session
+  applies_to: [runA2ATask (message/send, message/stream), humanbrowser_run, humanbrowser_stream]
+  exhaustion_status: 503
+  signal_in_body: retry_after_seconds
+  source: 'agent card, PERSISTENCE/PARALLELISM — "Concurrency cap per token = 5 by default; over-cap returns a 503 with retry_after_seconds"'
+- name: Queued tasks per session
+  scope: per-session
+  limit: 20
+  window: concurrent
+  metric: task
+  applies_to: [runA2ATask]
+  exhaustion_status: null
+  signal_in_body: '202 {queued:true, task_id, position, queue_depth} while accepted; task_waiting heartbeat every 20 s'
+  source: 'agent card, MULTIPLE TASKS ON ONE SESSION — "Up to 20 tasks may wait"'
+- name: Trial tokens per email
+  scope: per-email
+  limit: 1
+  window: lifetime
+  metric: token
+  applies_to: [claimTrial]
+  exhaustion_status: 429
+  source: 'openapi/humanbrowser-cloud-openapi.json POST /api/trial-balance responses; https://humanbrowser.cloud/install ("One key per email")'
+- name: Prepaid balance
+  scope: per-token
+  limit: purchased balance in USD
+  window: until exhausted
+  metric: usd
+  exhaustion_status: 402
+  error_code: quota_exceeded
+  source: 'https://humanbrowser.cloud/terms section 4 — "New API calls receive a 402 quota_exceeded error until you top up"; openapi runA2ATask and topUp declare 402/400'
+size_and_time_limits:
+- {name: File attachments per message, limit: '8 files, 25 MB each (base64 bytes) per https://humanbrowser.cloud/a2a; the agent card says "up to 8 MB"', source: 'a2a page vs agent card — the two disagree'}
+- {name: input-required pause timeout, limit: 'default 300 s, max 1800 s, then server-side auto-decline', source: agent card extension input-required/v1}
+- {name: Custom top-up amount, limit: '$1 to $2,000', source: 'https://humanbrowser.cloud/terms section 4'}
+- {name: Public alpha agent demo, limit: '10 minutes per IP per day, no signup', source: 'https://humanbrowser.cloud/agent'}
+- {name: Trial validity, limit: 'revoked 14 days after issuance without a paid top-up', source: 'https://humanbrowser.cloud/terms section 4'}
+exhaustion:
+  status: [402, 429, 503]
+  headers: []
+  media_type: application/json
+  note: No RateLimit-*, X-RateLimit-* or Retry-After header is documented; the 503 carries retry_after_seconds in its JSON body. Not observed live (every gated call was refused at 401 before any limit applied).

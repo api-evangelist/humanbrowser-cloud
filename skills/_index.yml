@@ -1,0 +1,22 @@
+generated: '2026-09-19'
+method: searched
+source: >-
+  One provider-published skill saved verbatim from the npm package (SKILL.md in @virixlabs/humanbrowser
+  5.0.3, Agent Skills frontmatter with name + description), plus one API Evangelist skill generated from
+  openapi/humanbrowser-cloud-openapi.json (all operationIds verified against the spec) and the provider's
+  agent card, /a2a page, Terms and Refund Policy.
+skills:
+- file: humanbrowser-cloud-human-browser.md
+  name: human-browser
+  method: searched
+  source: https://registry.npmjs.org/@virixlabs/humanbrowser/-/humanbrowser-5.0.3.tgz (package/SKILL.md, verbatim)
+  description: The provider's own 1,000-line playbook — cloud mode (runOnCloud over A2A) vs local mode (launchHuman), proxy setup, shadow-DOM forms, login patterns, CAPTCHA handling, session persistence, the A2A envelope and agent-card discovery.
+  operations: 1
+  operation_ids: [runA2ATask]
+  note: Provider-authored; contains vendor-specific guidance (third-party proxy providers, 2captcha) and example token prefixes (hb_skill_) that predate the current hb_live_ tokens. Not edited.
+- file: humanbrowser-cloud-run-cloud-task.md
+  name: humanbrowser-cloud-run-cloud-task
+  method: generated
+  description: Get a token, check the rates, run one goal over A2A, poll to a terminal state, relay the viewer URL, and respect the no-idempotency and reversibility rules.
+  operations: 5
+  operation_ids: [claimTrial, getAccount, getPlans, topUp, runA2ATask]

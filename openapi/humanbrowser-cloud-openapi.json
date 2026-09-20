@@ -1,0 +1,136 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Human Browser API",
+    "version": "1.0.0",
+    "description": "Cloud Chromium for AI agents. Drive a real, residential-IP browser via A2A 1.0, MCP, or this REST API. Agents send natural-language goals; the platform runs a real Chromium session and returns a concise answer plus a live viewer URL. This spec documents the PUBLIC endpoints only — admin/master endpoints are intentionally not published. Versioning: the stable v1 surface is exposed at the paths below; pass an optional `X-API-Version` header to pin a version (default `2026-08-01`).",
+    "contact": { "name": "Virix Labs", "url": "https://humanbrowser.cloud", "email": "general@virixlabs.com" },
+    "license": { "name": "Apache-2.0", "url": "https://github.com/VirixLabs/humanbrowser" }
+  },
+  "servers": [
+    { "url": "https://humanbrowser.cloud", "description": "REST account API" },
+    { "url": "https://agent.humanbrowser.cloud", "description": "A2A 1.0 + MCP session API (Bearer token)" }
+  ],
+  "externalDocs": { "description": "LLM-friendly reference", "url": "https://humanbrowser.cloud/llms-full.txt" },
+  "security": [{ "bearerAuth": [] }],
+  "tags": [
+    { "name": "account", "description": "Token, balance and top-ups" },
+    { "name": "session", "description": "Run a browser session against a goal" }
+  ],
+  "paths": {
+    "/api/trial-balance": {
+      "post": {
+        "tags": ["account"],
+        "operationId": "claimTrial",
+        "summary": "Claim a free trial token by email (no card).",
+        "description": "Email-gated. Issues a token carrying a free starter balance. One per email.",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } } } }
+        },
+        "responses": {
+          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" }, "balance_usd": { "type": "number" } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/account": {
+      "get": {
+        "tags": ["account"],
+        "operationId": "getAccount",
+        "summary": "Get the signed-in account: token, balance, session count.",
+        "security": [{ "sessionCookie": [] }, { "oauth2": ["account:read"] }],
+        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
+        "responses": {
+          "200": { "description": "Account record", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" }, "balance_usd": { "type": "number" }, "spent_usd": { "type": "number" }, "session_count": { "type": "integer" } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/topup": {
+      "post": {
+        "tags": ["account"],
+        "operationId": "topUp",
+        "summary": "Create a Stripe or crypto top-up for prepaid balance.",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["account:topup"] }],
+        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["amount_usd"], "properties": { "amount_usd": { "type": "number", "minimum": 1 }, "method": { "type": "string", "enum": ["stripe", "crypto"] } } } } } },
+        "responses": {
+          "200": { "description": "Checkout URL", "content": { "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/ServerError" }
+        }
+      }
+    },
+    "/api/plans": {
+      "get": { "tags": ["account"], "operationId": "getPlans", "summary": "List pay-as-you-go rates and top-up options.", "security": [], "responses": { "200": { "description": "Pricing", "content": { "application/json": {} } }, "500": { "$ref": "#/components/responses/ServerError" } } }
+    },
+    "/api/usage": {
+      "get": { "tags": ["account"], "operationId": "getUsage", "summary": "Recent usage for the authenticated token.", "security": [{ "bearerAuth": [] }, { "oauth2": ["account:read"] }], "responses": { "200": { "description": "Usage rows", "content": { "application/json": {} } }, "401": { "$ref": "#/components/responses/Unauthorized" } } }
+    },
+    "/a2a": {
+      "post": {
+        "tags": ["session"],
+        "operationId": "runA2ATask",
+        "summary": "Run a browser session against a natural-language goal (A2A 1.0, JSON-RPC + SSE).",
+        "description": "Live endpoint is https://agent.humanbrowser.cloud/a2a. Send a goal; receive a concise answer + a live viewer URL. Bearer-token auth. Full protocol at /a2a.",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["session:run"] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "jsonrpc": { "type": "string", "const": "2.0" }, "method": { "type": "string" }, "params": { "type": "object" } } } } } },
+        "responses": {
+          "200": { "description": "Task result stream" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/PaymentRequired" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ApiVersion": { "name": "X-API-Version", "in": "header", "required": false, "description": "Pin the API version (date-based). Defaults to the latest stable.", "schema": { "type": "string", "default": "2026-08-01" } }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "Uniform typed error model returned by every 4xx/5xx response.",
+        "required": ["error"],
+        "properties": {
+          "error": { "type": "string", "description": "Stable machine-readable error code, e.g. invalid-email, not-signed-in, rate-limited, insufficient-balance, server-error." },
+          "message": { "type": "string", "description": "Human-readable explanation." },
+          "hint": { "type": "string", "description": "Optional remediation hint for agents." },
+          "retry_after_seconds": { "type": "integer", "description": "Present on 429; how long to wait before retrying." }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": { "description": "Invalid request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Missing or invalid credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "PaymentRequired": { "description": "Insufficient prepaid balance — top up to continue", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "RateLimited": { "description": "Too many requests", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "ServerError": { "description": "Unexpected server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Human Browser API token (hb_live_… or trial). Send as Authorization: Bearer <token>." },
+      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "hb_session", "description": "Login session cookie for account endpoints." },
+      "oauth2": {
+        "type": "oauth2",
+        "description": "Least-privilege scoped access. Request only the scopes an agent needs.",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://agent.humanbrowser.cloud/oauth/token",
+            "scopes": {
+              "session:run": "Spawn and drive browser sessions",
+              "account:read": "Read token balance, usage and account state",
+              "account:topup": "Create top-ups / purchases against the account"
+            }
+          }
+        }
+      }
+    }
+  }
+}

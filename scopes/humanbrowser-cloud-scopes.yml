@@ -1,0 +1,68 @@
+generated: '2026-09-19'
+method: searched
+source: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://agent.humanbrowser.cloud/.well-known/oauth-authorization-server
+- https://agent.humanbrowser.cloud/.well-known/oauth-protected-resource
+summary: >-
+  Two scope vocabularies from two OAuth surfaces that do not reference each other. The OpenAPI's oauth2
+  clientCredentials scheme declares session:run, account:read and account:topup and binds them per
+  operation — but its tokenUrl (https://agent.humanbrowser.cloud/oauth/token) 404s on GET and POST. The
+  live authorization server's RFC 8414 metadata on the same host declares mcp:run and mcp:read for the
+  MCP resource, with no per-tool binding published anywhere. Neither vocabulary is documented on a
+  scopes/permissions page (/docs/oauth 404). Every shipped integration uses the unscoped hb_live_ bearer
+  token instead.
+schemes:
+- name: oauth2
+  source: openapi/humanbrowser-cloud-openapi.json
+  flows:
+  - flow: clientCredentials
+    tokenUrl: https://agent.humanbrowser.cloud/oauth/token
+    tokenUrl_status: 404 (GET and POST, 2026-09-19)
+  description: Least-privilege scoped access. Request only the scopes an agent needs.
+- name: mcp-oauth
+  source: well-known/humanbrowser-cloud-oauth-authorization-server.json
+  flows:
+  - flow: authorizationCode
+    authorizationUrl: https://agent.humanbrowser.cloud/authorize
+    tokenUrl: https://agent.humanbrowser.cloud/token
+    pkce: S256
+  description: RFC 8414 metadata; resource https://agent.humanbrowser.cloud/mcp per RFC 9728.
+scopes:
+- scope: session:run
+  description: Spawn and drive browser sessions
+  flows:
+  - clientCredentials
+  operations: [runA2ATask]
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+- scope: account:read
+  description: Read token balance, usage and account state
+  flows:
+  - clientCredentials
+  operations: [getAccount, getUsage]
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+- scope: account:topup
+  description: Create top-ups / purchases against the account
+  flows:
+  - clientCredentials
+  operations: [topUp]
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+- scope: mcp:run
+  description: undocumented — by name, invoke MCP tools that run browser tasks
+  flows:
+  - authorizationCode
+  operations: []
+  sources:
+  - well-known/humanbrowser-cloud-oauth-authorization-server.json
+  - well-known/humanbrowser-cloud-oauth-protected-resource.json
+- scope: mcp:read
+  description: undocumented — by name, read-only MCP access
+  flows:
+  - authorizationCode
+  operations: []
+  sources:
+  - well-known/humanbrowser-cloud-oauth-authorization-server.json
+  - well-known/humanbrowser-cloud-oauth-protected-resource.json

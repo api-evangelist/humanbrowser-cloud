@@ -1,0 +1,80 @@
+generated: '2026-09-19'
+method: searched
+source: https://humanbrowser.cloud/openapi.json
+derived_from: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://humanbrowser.cloud/terms
+- https://registry.npmjs.org/@virixlabs/humanbrowser
+- https://agent.humanbrowser.cloud/.well-known/agent-card.json
+versioning:
+  scheme: date-based request header on unversioned paths
+  mechanism: 'optional X-API-Version header; "the stable v1 surface is exposed at the paths below; pass an optional X-API-Version header to pin a version (default 2026-08-01)" (OpenAPI info.description)'
+  current_version: '2026-08-01 (API version) · 1.0.0 (OpenAPI info.version) · 5.1.0 (agent card) · 5.0.3 (npm, 2026-06-17) · A2A protocolVersion 0.3.0'
+  spec_url: https://humanbrowser.cloud/openapi.json
+  policy_published: false
+  note: >-
+    The header is declared in prose only — it is not a parameter on any operation. Four surfaces carry
+    four different version numbers, and the provider's prose says "A2A 1.0" where the card says 0.3.0.
+deprecation:
+  policy_published: false
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  deprecated_operations: []
+  documented_renames:
+  - what: HUMANBROWSER_API_TOKEN environment variable
+    replaced_by: HB_TOKEN ("canonical name as of 5.0.2")
+    status: 'legacy alias still accepted (docs/mcp, CLI usage text)'
+    evidence: bin/cli.js in the 5.0.3 tarball; https://humanbrowser.cloud/docs/mcp
+  - what: humanbrowser_v1 input-required resume protocol (referenceTaskIds + metadata.in_reply_to)
+    replaced_by: spec_clean form (message.taskId + message.contextId)
+    status: '"legacy, accepted for backward compatibility"'
+    evidence: agent card extension https://humanbrowser.cloud/a2a-ext/input-required/v1
+  - what: 409 busy on a second task to a live session
+    replaced_by: 202 queued
+    evidence: 'agent card — "Previously a second task was refused with 409 busy"'
+  note: Zero operations carry deprecated:true. No policy page, no Sunset/Deprecation headers, no changelog to announce a removal in.
+status_page:
+  url: null
+  probed:
+  - {url: 'https://humanbrowser.cloud/status', status: 404}
+  - {url: 'https://status.humanbrowser.cloud/', status: 'DNS/TLS failure (no host)'}
+  - {url: 'https://humanbrowser.cloud/uptime', status: 404}
+  live_signal: 'GET https://agent.humanbrowser.cloud/.well-known/agent-card.json is what the CLI `doctor` command pings for reachability; the card also names actions/list_countries for "per-country pool health".'
+  note: No status page and no incident history; no StatusPage pointer is emitted.
+sla:
+  published: false
+  url: https://humanbrowser.cloud/terms
+  note: >-
+    Terms 6: the Service is "as is" and "as available"; no guarantee that any site will load, that any
+    country IP will be available, or that the Service will be uninterrupted. The only mention of an SLA is
+    the word in the Enterprise entry of GET /api/plans ("Dedicated IPs, SLA"), with no document behind it
+    (/sla 404).
+notice_commitments:
+  source: https://humanbrowser.cloud/terms
+  items:
+  - {what: per-resource rate changes, notice: at least 14 days, on the Terms page}
+  - {what: material changes to the Terms, notice: at least 14 days, by email to registered users}
+  - {what: material changes to the Privacy Policy, notice: at least 14 days, by email}
+  - {what: discontinuing the Service for all users, notice: at least 30 days, with unused balance refunded}
+changelog:
+  published: false
+  probed:
+  - {url: 'https://humanbrowser.cloud/changelog', status: 404}
+  - {url: 'https://humanbrowser.cloud/docs/changelog', status: 404}
+  - {url: 'https://humanbrowser.cloud/releases', status: 404}
+  dated_signals:
+  - {date: '2026-09-15', what: 'newest sitemap lastmod (blog posts)'}
+  - {date: '2026-09-07', what: 'agent card skill text — Meta div[role=button] real-mouse clicking, FilePart avatar/cover uploads'}
+  - {date: '2026-08-04', what: 'agent card — model comparison measurement referenced'}
+  - {date: '2026-08-01', what: 'default X-API-Version'}
+  - {date: '2026-06-18', what: 'CLI balance subcommand added (source comment)'}
+  - {date: '2026-06-17', what: 'npm 5.0.2 and 5.0.3 published; last GitHub push per the org-repos API; CLI doctor subcommand added'}
+  - {date: '2026-06-03', what: 'npm 5.0.1; cua engine became the default (llms-full.txt)'}
+  - {date: '2026-05-28', what: 'npm 5.0.0 — first publication of @virixlabs/humanbrowser'}
+  - {date: '2026-05-15', what: 'Terms of Service, Privacy Policy and Refund Policy "Last updated"'}
+  - {date: '2026-01-08', what: 'oldest sitemap lastmod'}
+  note: >-
+    The package SECURITY.md promises to credit researchers "in our changelog" and no changelog exists. The
+    blog is the only dated narrative surface, and it is SEO guides (Cloudflare, proxies, comparisons), not
+    release notes. No ChangeLog artifact is written.

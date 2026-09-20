@@ -1,0 +1,50 @@
+generated: '2026-09-19'
+method: searched
+source: https://registry.npmjs.org/@virixlabs/humanbrowser
+docs: https://humanbrowser.cloud/install
+description: >-
+  One first-party package: @virixlabs/humanbrowser on npm, which is the JavaScript SDK (runOnCloud,
+  launchHuman, getAgentCard), the stdio MCP server and the `humanbrowser` CLI in a single tarball. Registry
+  metadata read from registry.npmjs.org on 2026-09-19. No PyPI package exists (pypi.org/pypi/humanbrowser/json
+  and /virixlabs-humanbrowser/json both 404). The GitHub repository the package, the site and the agent card
+  all point at (https://github.com/VirixLabs/humanbrowser) is listed by the GitHub org-repos API (Apache-2.0,
+  default branch main, pushed 2026-06-17, 20 stars) but the repository page and the repos API both return 404,
+  as does https://github.com/VirixLabs itself — so the source is reachable today only through the npm tarball.
+packages:
+- language: javascript
+  registry: npm
+  name: '@virixlabs/humanbrowser'
+  url: https://www.npmjs.com/package/@virixlabs/humanbrowser
+  source: https://github.com/VirixLabs/humanbrowser
+  install: npm install @virixlabs/humanbrowser
+  official: true
+  version: 5.0.3
+  published: '2026-06-17'
+  first_published: '2026-05-28'
+  versions_published: 4
+  release_dates: {5.0.0: '2026-05-28', 5.0.1: '2026-06-03', 5.0.2: '2026-06-17', 5.0.3: '2026-06-17'}
+  license: Apache-2.0
+  maintainer: virix-labs <general@virixlabs.com>
+  bin: humanbrowser
+  engines: node >=18
+  dependencies: {'@modelcontextprotocol/sdk': '^1.29.0', dotenv: '^17.3.1'}
+  peer_dependencies: {playwright: '^1.58.2'}
+  ships: [index.js (runOnCloud / launchHuman / getAgentCard), mcp/server.js (stdio MCP server), bin/cli.js (CLI), SKILL.md (Agent Skill), SECURITY.md, CITATION.cff]
+  registry_status: 200
+  note: >-
+    The card advertises version 5.1.0 and the site says "Open-source MIT ★ 21" while the package and LICENSE
+    file are Apache-2.0; the npm README badge also says Apache-2.0. Latest release predates the card's
+    2026-09-07 skill changes by twelve weeks, and the docs/mcp six-tool surface does not exist in this
+    package — the hosted endpoint has moved on while the published SDK has not.
+- language: javascript
+  registry: npm
+  name: '@virixlabs/mcp-human-browser'
+  url: https://www.npmjs.com/package/@virixlabs/mcp-human-browser
+  official: true
+  version: null
+  published: null
+  registry_status: 404
+  note: Named as "the MCP server shim" in the package's SECURITY.md scope, but the registry has no such package; the MCP server ships inside @virixlabs/humanbrowser instead.
+absent:
+- {registry: pypi, probed: [https://pypi.org/pypi/humanbrowser/json, https://pypi.org/pypi/virixlabs-humanbrowser/json], status: 404}
+- {registry: github, probed: [https://github.com/VirixLabs/humanbrowser, https://api.github.com/repos/VirixLabs/humanbrowser, https://github.com/VirixLabs/stealth-benchmark], status: 404, note: 'listed by GET /orgs/VirixLabs/repos yet unreachable directly; stealth-benchmark (linked from llms.txt) is not listed at all'}

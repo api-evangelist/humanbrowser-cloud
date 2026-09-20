@@ -1,0 +1,31 @@
+generated: '2026-09-19'
+method: searched
+source: https://registry.npmjs.org/@virixlabs/humanbrowser/-/humanbrowser-5.0.3.tgz (package/bin/cli.js)
+docs: https://humanbrowser.cloud/install
+description: >-
+  The `humanbrowser` binary shipped in @virixlabs/humanbrowser 5.0.3 (bin/cli.js). Five subcommands, read
+  from the CLI's own usage block and handlers. It is a thin client over the A2A endpoint, not a separate
+  product: `mcp` starts the stdio MCP server, `run` drives one cloud task, `doctor` pings the public agent
+  card to verify connectivity (never billed), `balance` reads the token's balance. The package itself is
+  catalogued in packages/humanbrowser-cloud-packages.yml.
+repo: https://github.com/VirixLabs/humanbrowser
+install:
+  npx: npx -y @virixlabs/humanbrowser <command>
+  npm: npm install -g @virixlabs/humanbrowser
+commands:
+  agent:
+  - {name: mcp, description: Start the MCP server on stdio (for Claude Desktop, Cursor, Cline, etc.).}
+  - {name: run, description: 'Drive a single cloud task interactively: humanbrowser run "<goal>" [flags]. Interactive resume on input-required.'}
+  diagnostics:
+  - {name: doctor, description: 'Verify token + connectivity: prints a masked view of which env var was loaded and the resolved A2A base, then GETs <base>/.well-known/agent-card.json. Added 2026-06-17; no charge.'}
+  - {name: balance, description: 'Print remaining USD balance, sessions and spent for the loaded token via GET <base>/api/balance (Bearer). Added 2026-06-18; read-only, never billed. This endpoint is not in the published OpenAPI; an anonymous GET returns 401.'}
+  help:
+  - {name: help, description: Show usage.}
+environment:
+  HB_TOKEN: Bearer token for the cloud agent (canonical name as of 5.0.2)
+  HUMANBROWSER_API_TOKEN: Legacy fallback name; still supported
+  HB_API_BASE: Override the A2A endpoint (default https://agent.humanbrowser.cloud)
+  HB_VERBOSE: '1 to show backend-resolver detection logs'
+notes:
+- The usage text says "Get a token: https://humanbrowser.cloud/install — $1 free, no card" while the site says $10.
+- Library entry points exported alongside the CLI: runOnCloud, launchHuman, getAgentCard (index.js).

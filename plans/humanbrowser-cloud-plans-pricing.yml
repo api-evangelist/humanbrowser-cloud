@@ -1,0 +1,104 @@
+generated: '2026-09-19'
+method: probed
+source: https://humanbrowser.cloud/api/plans
+docs:
+- https://humanbrowser.cloud/install
+- https://humanbrowser.cloud/docs/mcp
+- https://humanbrowser.cloud/terms
+- https://humanbrowser.cloud/refund
+- https://humanbrowser.cloud/ppr
+plan_count: 7
+currency: USD
+model: prepaid pay-as-you-go balance metered per resource; no subscription (per the site and Terms) — but the machine-readable /api/plans endpoint describes monthly subscriptions
+summary: >-
+  Two pricing stories are published and they disagree. Every human-facing page (install, docs/mcp, the
+  pricing modal, llms.txt, Terms of Service section 4 dated 2026-05-15) says: prepaid balance, no
+  subscription, no auto-renew, top up $20 / $80 / $200 or any custom amount between $1 and $2,000, balance
+  never expires, metered at $0.10 per browser-minute, $4 per GB residential bandwidth, $0.005 per solved
+  CAPTCHA, hosted AI from $0.005 per 1K tokens (or per task from $0.02). The unauthenticated JSON at
+  GET /api/plans — the URL the agent card names as pricing_json_url and the operation the OpenAPI calls
+  getPlans — instead lists three MONTHLY SUBSCRIPTIONS (Starter $20/mo, Pro $80/mo, Enterprise $400/mo)
+  with a monthly usage balance, rollover caps and country allow-lists, and says "Subscribe $X, get $X usage
+  balance"; it also says LLM tokens are "pass-through with BYO API key" where the site prices hosted AI. The
+  Terms commit to 14 days' notice on this page before rates change. Both are recorded verbatim below; the
+  prepaid model is the one the Terms bind, and an agent that reads only /api/plans will be told a model the
+  provider's own Terms do not describe.
+usage_rates:
+  source: https://humanbrowser.cloud/terms (section 4) and https://humanbrowser.cloud/install
+  rates:
+  - {resource: Browser session, price: 0.10, unit: per minute}
+  - {resource: Residential proxy bandwidth, price: 4.00, unit: per GB}
+  - {resource: Hosted AI inference, price: 'from 0.005', unit: per 1K tokens, alt: 'or per task from $0.02; llms.txt says $0.005-$0.05 per 1K tokens by model'}
+  - {resource: CAPTCHA solve, price: 0.005, unit: each, note: 'billed on success only (agent card, hostile_site_solver)'}
+  - {resource: Meta Business Workflow (adspower engine), price: 0.05, unit: per session surcharge, source: agent card skill description}
+  typical_task: '$0.13-0.25 first run, $0.03-0.05 cached (llms.txt); $0.15-0.25 / $0.03-0.05 (docs/mcp); $0.30-0.50 / $0.05-0.10 on hostile sites (agent card)'
+plans:
+- id: free-trial
+  name: Free trial token
+  price: 0
+  currency: USD
+  period: one-time
+  included: $10 usage balance (site, docs, Terms); the CLI usage text and llms-full.txt example say $1
+  limits: ['one per email, lifetime', 'auto-revoked 14 days after issuance if no paid top-up', 'no card required', 'not refundable']
+  how: POST /api/trial-balance (claimTrial) with {email}
+- id: topup-20
+  name: Top up $20
+  price: 20
+  currency: USD
+  period: one-time prepaid
+  included: '$20 balance; the pricing modal estimates "≈ 6 hrs agent runtime"; "Good for testing"'
+- id: topup-80
+  name: Top up $80
+  price: 80
+  currency: USD
+  period: one-time prepaid
+  included: '$80 balance; "≈ 27 hrs · 190+ countries"; "Most popular"'
+- id: topup-200
+  name: Top up $200
+  price: 200
+  currency: USD
+  period: one-time prepaid
+  included: '$200 balance; "≈ 67 hrs · priority queue"; "For production agents"'
+  note: Any custom amount between $1 and $2,000 is also accepted (Terms 4); auto-recharge is offered in the modal.
+- id: api-plans-starter
+  name: Human Browser Starter
+  price: 20
+  currency: USD
+  period: per month (as served by GET /api/plans)
+  included: '$20 monthly usage balance, rollover cap $40, countries [ro]; "~200 browser-minutes or ~4,000 captcha solves"'
+  source: https://humanbrowser.cloud/api/plans
+- id: api-plans-pro
+  name: Human Browser Pro
+  price: 80
+  currency: USD
+  period: per month (as served by GET /api/plans)
+  included: '$80 monthly usage balance, rollover cap $160, countries [ro, us, uk, de, nl, jp, fr, ca, au, sg]'
+  source: https://humanbrowser.cloud/api/plans
+- id: api-plans-enterprise
+  name: Human Browser Enterprise
+  price: 400
+  currency: USD
+  period: per month (as served by GET /api/plans)
+  included: '$400 monthly usage balance, rollover cap $800, countries [all]; "Dedicated IPs, SLA"'
+  source: https://humanbrowser.cloud/api/plans
+  note: The only mention of an SLA anywhere on the surface; no SLA document exists (/sla 404) and the Terms disclaim uptime.
+pay_per_request_credits:
+  source: https://humanbrowser.cloud/ppr
+  status: Beta
+  description: A separate crypto-only "Pay-per-Request API" for proxy request credits, delivered as credentials by email; agents can buy programmatically.
+  tiers:
+  - {requests: 100, price: 0.50}
+  - {requests: 500, price: 2.00}
+  - {requests: 1000, price: 3.00}
+  - {requests: 5000, price: 10.00}
+  - {requests: 10000, price: 15.00}
+  - {requests: 50000, price: 50.00}
+payment_methods:
+  card: Stripe Checkout (card, Apple Pay, Google Pay) via POST /api/topup
+  crypto: 0xProcessing via POST /api/buy — USDT TRC-20 (default), USDC (Solana), BTC, ETH (ERC-20), SOL; crypto top-ups are final-sale
+  self_service_for_agents: 'POST /api/buy returns a checkout URL / wallet address; the card says a webhook issues a fresh hb_live_ token after payment'
+balance_exhaustion: 'New API calls receive 402 quota_exceeded until you top up; running sessions finish; the key stays valid (Terms 4)'
+probed:
+- {url: 'https://humanbrowser.cloud/api/plans', status: 200, fetched: '2026-09-19', content_type: application/json, bytes: 1189}
+- {url: 'https://humanbrowser.cloud/install', status: 200, fetched: '2026-09-19'}
+- {url: 'https://humanbrowser.cloud/pricing', status: 404, fetched: '2026-09-19'}

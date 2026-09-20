@@ -1,0 +1,106 @@
+generated: '2026-09-19'
+method: searched
+source: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://humanbrowser.cloud/docs/mcp
+- https://humanbrowser.cloud/a2a
+- https://agent.humanbrowser.cloud/.well-known/oauth-authorization-server
+- https://agent.humanbrowser.cloud/.well-known/oauth-protected-resource
+summary:
+  types:
+  - http
+  - apiKey
+  - oauth2
+  api_key_in:
+  - cookie
+  oauth2_flows:
+  - clientCredentials (declared in the OpenAPI; tokenUrl dead)
+  - authorizationCode + PKCE (live on agent.humanbrowser.cloud via RFC 8414 metadata; undocumented)
+  bearer: true
+  credential_classes: 4
+  headline: >-
+    One prepaid-balance bearer token (hb_live_...) is the credential every published integration uses —
+    the A2A endpoint, the hosted MCP endpoint, the stdio MCP server (HB_TOKEN env, legacy alias
+    HUMANBROWSER_API_TOKEN), the SDK, the CLI and the token-scoped REST operations. A dashboard session
+    cookie (hb_session) guards getAccount. The OpenAPI also declares an oauth2 clientCredentials scheme
+    with three scopes whose tokenUrl 404s, and the agent host serves a live OAuth 2.1 authorization server
+    (authorization code + PKCE S256, client-ID metadata documents or DCR ids hbc_<32hex>, scopes mcp:run /
+    mcp:read) advertised for the MCP resource by RFC 9728 metadata — but no documentation page describes
+    that flow (service_documentation /docs/oauth 404) and every guide says "use the bearer token".
+schemes:
+- name: bearerAuth
+  type: http
+  scheme: bearer
+  token_prefix: hb_live_
+  description: 'Human Browser API token (hb_live_… or trial). Send as Authorization: Bearer <token>.'
+  issuance:
+    trial: POST /api/trial-balance {email} (claimTrial) — $10 balance, one per email, revoked after 14 days without a top-up
+    paid: issued on first top-up; the card says POST /api/buy returns a fresh token by webhook after a crypto payment
+    dashboard: https://humanbrowser.cloud/account
+  used_by: [topUp, getUsage, runA2ATask, 'POST /mcp (hosted MCP)', 'GET /api/balance on the agent host (CLI balance; not in the OpenAPI)']
+  observed:
+  - {url: 'POST https://agent.humanbrowser.cloud/mcp', status: 401, www_authenticate: 'Bearer realm="humanbrowser-mcp"', body: '{"error":"unauthorized","hint":"Authorization: Bearer hb_live_<token>"}'}
+  - {url: 'POST https://agent.humanbrowser.cloud/a2a', status: 401, body: 'JSON-RPC error -32001 Unauthorized, data.hint "Authorization: Bearer <token>"'}
+  - {url: 'GET https://humanbrowser.cloud/api/usage', status: 401, body: '{"error":"Unauthorized. Pass Authorization: Bearer <DEPLOY_SECRET>"}', note: 'the live route asks for a deployment secret, not a customer token'}
+  rules: ['never put the token in a URL query string (agent card)', 'the MCP endpoint refuses non-Bearer auth', 'tokens are hashed at rest (Privacy 10)', 'report a suspected compromise by email (Terms 3)']
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+  - https://humanbrowser.cloud/docs/mcp
+- name: sessionCookie
+  type: apiKey
+  in: cookie
+  parameter: hb_session
+  description: Login session cookie for account endpoints.
+  used_by: [getAccount]
+  observed:
+  - {url: 'GET https://humanbrowser.cloud/api/account', status: 400, body: '{"error":"bad-token"}', note: 'without a cookie or token'}
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+- name: oauth2
+  type: oauth2
+  flows:
+  - flow: clientCredentials
+    tokenUrl: https://agent.humanbrowser.cloud/oauth/token
+    scopes: 3
+    scope_list: [session:run, account:read, account:topup]
+  description: Least-privilege scoped access. Request only the scopes an agent needs.
+  used_by: [getAccount (account:read), topUp (account:topup), getUsage (account:read), runA2ATask (session:run)]
+  status: declared but not reachable
+  observed:
+  - {url: 'https://agent.humanbrowser.cloud/oauth/token', method: GET, status: 404}
+  - {url: 'https://agent.humanbrowser.cloud/oauth/token', method: POST, status: 404, body: '{"error":"not-found","path":"/oauth/token"}'}
+  sources:
+  - openapi/humanbrowser-cloud-openapi.json
+- name: mcp-oauth (RFC 8414 / RFC 9728, not in the OpenAPI)
+  type: oauth2
+  flows:
+  - flow: authorizationCode
+    authorizationUrl: https://agent.humanbrowser.cloud/authorize
+    tokenUrl: https://agent.humanbrowser.cloud/token
+    refreshUrl: https://agent.humanbrowser.cloud/token
+    registrationUrl: https://agent.humanbrowser.cloud/register
+    revocationUrl: https://agent.humanbrowser.cloud/revoke
+    pkce: S256 required (only method listed)
+    client_auth: [none, client_secret_post]
+    client_ids: 'CIMD URL (https://) or DCR id hbc_<32hex>'
+    scopes: [mcp:run, mcp:read]
+  resource: https://agent.humanbrowser.cloud/mcp
+  description: The OAuth 2.1 door an MCP client following RFC 9728 discovery would find; scopes and endpoints from the two well-known documents. No human-readable documentation exists for it.
+  status: live but undocumented
+  observed:
+  - {url: 'GET /authorize', status: 400, body: 'unsupported_response_type — response_type must be code'}
+  - {url: 'GET /authorize?response_type=code&client_id=probe', status: 400, body: 'invalid_client — client_id must be CIMD URL (https://) or DCR id (hbc_<32hex>)'}
+  - {url: 'POST /token (empty form)', status: 400, body: 'unsupported_grant_type — grant_type must be authorization_code or refresh_token'}
+  - {url: 'GET /token', status: 404}
+  - {url: 'GET /register', status: 404, note: 'POST not attempted (would register a client)'}
+  - {url: 'https://humanbrowser.cloud/docs/oauth (service_documentation)', status: 404}
+  sources:
+  - well-known/humanbrowser-cloud-oauth-authorization-server.json
+  - well-known/humanbrowser-cloud-oauth-protected-resource.json
+a2a_card_scheme:
+  http_bearer: {type: http, scheme: bearer, description: 'Skill token issued by humanbrowser.cloud. Required on every /a2a call.'}
+  security: [{http_bearer: []}]
+environment_variables:
+  HB_TOKEN: canonical since 5.0.2 (stdio MCP server, CLI)
+  HUMANBROWSER_API_TOKEN: legacy alias, still accepted
+  HB_API_BASE / HUMANBROWSER_API_BASE: 'override the agent host (default https://agent.humanbrowser.cloud)'

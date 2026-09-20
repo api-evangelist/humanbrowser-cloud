@@ -1,0 +1,42 @@
+generated: '2026-09-19'
+method: searched
+source: https://humanbrowser.cloud/install
+docs:
+- https://humanbrowser.cloud/docs/mcp
+- https://humanbrowser.cloud/agent
+- https://humanbrowser.cloud/terms
+- https://humanbrowser.cloud/openapi.json
+probed:
+- {url: 'https://humanbrowser.cloud/api/trial-balance', method: GET, status: 405, body: '{"error":"method-not-allowed"}', fetched: '2026-09-19', note: 'The trial route exists and is POST-only; no trial was claimed.'}
+- {url: 'https://humanbrowser.cloud/agent', status: 200, fetched: '2026-09-19'}
+summary: >-
+  There is no separate test environment, no test-mode key and no fixture tooling: production is the
+  sandbox. What the provider offers instead is money-shaped — a free trial balance on a real hb_live_ token
+  (email gate, no card), a public alpha page where anyone can drive the agent for ten free minutes a day per
+  IP without a token, and two read-only CLI commands (doctor, balance) that verify connectivity and balance
+  without spending anything. Every task after that is billed at the published rates.
+test_vs_live:
+  separate_environment: false
+  key_prefixes:
+    live: hb_live_
+    trial: 'hb_live_ (the OpenAPI describes the token as "hb_live_… or trial"; no distinct trial prefix is documented)'
+    historical: 'hb_skill_ appears in the package SKILL.md example (export HUMANBROWSER_API_TOKEN=hb_skill_xxxx)'
+  note: One host, one token type; a trial token and a paid token differ only in balance and in the 14-day revocation clock.
+free_trial:
+  operation: claimTrial — POST /api/trial-balance {email}
+  amount_usd: '10 (site, docs/mcp, Terms 4, llms.txt); the CLI usage text and the llms-full.txt example response say 1.00'
+  card_required: false
+  limits: ['one per email, lifetime (429 on repeat)', 'auto-revoked 14 days after issuance if no paid top-up', 'no cash value, not refundable (Refund Policy 4)']
+  response_shape: '{ok, token, balance_usd, expires_at} per llms-full.txt'
+public_demo:
+  url: https://humanbrowser.cloud/agent
+  status: 'ALPHA · LIVE · FREE 10 MIN/DAY'
+  note: 'Type a goal, watch a real session in the live viewer; "No signup, no credit card. The first 10 minutes are free per IP per day; bring your own API key for unlimited use." Model picker: Claude Sonnet 4.6, Claude Haiku 4.5, Kimi K2. Requires an access code to spawn a session per the page text.'
+no_charge_calls:
+- {what: 'humanbrowser doctor', does: 'GET <base>/.well-known/agent-card.json', billed: false}
+- {what: 'humanbrowser balance', does: 'GET <base>/api/balance (Bearer)', billed: false}
+- {what: 'GET /.well-known/agent-card.json', does: 'unauthenticated card discovery', billed: false}
+- {what: 'GET /api/plans', does: 'unauthenticated rate sheet', billed: false}
+- {what: 'actions/get_cost_snapshot, actions/list_countries, list_models, list_engines', does: 'A2A read-only custom actions (Bearer)', billed: 'not stated'}
+dry_run: none — no rehearsal mode; the closest signal is metadata.estimated_cost_usd on the initial Task response and the get_cost_snapshot action
+fixtures: none

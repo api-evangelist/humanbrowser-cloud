@@ -1,0 +1,120 @@
+generated: '2026-09-19'
+method: searched
+source: https://humanbrowser.cloud/openapi.json
+derived_from: openapi/humanbrowser-cloud-openapi.json
+docs:
+- https://humanbrowser.cloud/a2a
+- https://humanbrowser.cloud/docs/mcp
+- https://humanbrowser.cloud/terms
+- https://humanbrowser.cloud/refund
+- https://agent.humanbrowser.cloud/.well-known/agent-card.json
+base_url: https://humanbrowser.cloud (REST account API) · https://agent.humanbrowser.cloud (A2A JSON-RPC + MCP)
+media_type: application/json; text/event-stream for message/stream
+api_style: >-
+  Two styles behind one token. The account side is a five-operation JSON REST API on the website host.
+  The work side is JSON-RPC 2.0 over HTTPS at POST /a2a (A2A 0.3.0 methods message/send, message/stream,
+  tasks/get, tasks/cancel plus twelve provider "actions/*" methods) with Server-Sent Events for streaming,
+  wrapped a second time as MCP tools at /mcp.
+auth:
+  style: >-
+    One static bearer token (hb_live_..., prepaid balance) for /a2a, /mcp and the token-scoped REST
+    operations; a login cookie (hb_session) for the dashboard's getAccount; an oauth2 clientCredentials
+    scheme declared in the OpenAPI (scopes session:run, account:read, account:topup) whose tokenUrl 404s;
+    and a separate, undocumented OAuth 2.1 authorization-code + PKCE server published for the MCP resource
+    (scopes mcp:run, mcp:read). See authentication/ and scopes/.
+  detail: authentication/humanbrowser-cloud-authentication.yml
+idempotency:
+  supported: false
+  coverage: none
+  mechanism: null
+  header: null
+  scope: []
+  retention: undocumented
+  description: >-
+    No Idempotency-Key header, parameter or body field exists on any of the three REST writes (claimTrial,
+    topUp, runA2ATask) and none is documented for message/send. What the provider documents instead are
+    behavioural guards: the trial endpoint is one-per-email for life (a natural key, 429 on repeat); a
+    second task sent to a busy session is QUEUED rather than duplicated (202 with position); and a
+    "submit_guard" stops the browser agent clicking a submit/pay/order button more than twice on one page
+    without navigation (metadata.overrides.submit_max, allow_resubmit). The docs/mcp page calls the
+    unverified close_session tool "Idempotent". None of that lets a client safely retry a topUp or a
+    message/send after an ambiguous timeout: a retried message/send starts a second billed task.
+  gaps:
+  - No idempotency key on POST /api/topup, the operation that creates a payment checkout.
+  - No idempotency key on message/send; a retry after a timeout queues or starts a second task on the same profile.
+  - No documented safe-retry guidance beyond "poll tasks/get" — the reporting contract in the card tells agents not to assume failure while state=working, which is the mitigation.
+dry_run_mode:
+  supported: false
+  status: none
+  mechanism: null
+  description: >-
+    No rehearsal route. The nearest signals are metadata.estimated_cost_usd on the initial Task response,
+    the actions/get_cost_snapshot method, the free public alpha at /agent (10 minutes per IP per day) and
+    the free trial balance — all of which run the real thing.
+reversibility:
+  grade: verified
+  docs: https://humanbrowser.cloud/refund
+  note: >-
+    A reversal path AND a stated window exist for the money side: an untouched top-up is refundable within
+    7 days of payment (Refund Policy 3), and a running task can be cancelled (tasks/cancel tears the session
+    down). Nothing below asserts a window the provider has not written down. Crypto top-ups and consumed
+    balance are irreversible by policy, and a browser task's side effects on a third-party website are
+    outside the provider's power to reverse at all.
+  write_surfaces:
+  - operation: topUp (POST /api/topup) and POST /api/buy
+    action: Create a Stripe or crypto checkout that adds prepaid balance
+    reversal: refund by email (subject "Refund request") to the original payment method, minus processor fees (Stripe ~2.9% + $0.30)
+    window: 'within 7 days of the top-up, provided no part of that top-up has been spent; after 7 days unused balance stays on the account and never expires'
+    exclusions: ['used balance — even partially — is non-refundable', 'crypto top-ups are final-sale', 'trial credit has no cash value']
+    sla: 'response within 2 business days; approved refunds processed in 5-10 business days'
+    docs: https://humanbrowser.cloud/refund
+  - operation: runA2ATask — message/send / message/stream
+    action: Spawn a billed browser session and run a goal (which may itself submit forms, buy things, post content on third-party sites)
+    reversal: tasks/cancel — "cancel a running task; the underlying session is torn down"
+    window: while state is working, submitted or input-required (terminal states completed / failed / canceled cannot be cancelled)
+    docs: https://humanbrowser.cloud/a2a
+    note: Cancelling stops further spend; it does not undo what the agent already did on the target site, and consumed browser-minutes are not refunded. The submit_guard block (max 2 clicks per submit-type button per page) is the provider's own guard against double-purchases.
+  - operation: claimTrial (POST /api/trial-balance)
+    action: Issue a trial token for an email address
+    reversal: none documented (one per email, lifetime); the trial revokes itself after 14 days without a top-up
+    window: null
+  read_only_surfaces: [getAccount, getPlans, getUsage, tasks/get, actions/list_countries, actions/list_models, actions/list_engines, actions/get_cost_snapshot, actions/get_page_diagnostics, actions/get_screenshots, actions/list_learned_apis]
+pagination:
+  style: none
+  description: No list operation is paginated. getAccount returns a bounded usage_tail array; getUsage's response is undeclared ("Usage rows"); actions/get_screenshots takes a mode (highlights | index | both) rather than a cursor.
+field_expansion: none
+metadata: >-
+  message.metadata on message/send is the control channel — profile, country (ISO-2), engine
+  (patchright | cloak | cua | adspower | remote-cdp | relay), mobile_ua, callback_url, priority, force_new,
+  overrides, in_reply_to. Task.metadata carries session_id, viewer_url, estimated_cost_usd, profile,
+  blocks, outcome and (on failure) postmortem {root_cause_category, observed_blockers, working_strategies,
+  retry_recommendation}.
+request_id:
+  supported: false
+  description: No request-id header is documented. Correlation is by JSON-RPC id, task_id (task_...) and session_id (sid_... / s_...).
+versioning:
+  scheme: date-based header
+  mechanism: 'optional X-API-Version request header; default 2026-08-01 (OpenAPI info.description)'
+  path_version: none — paths are unversioned
+  detail: lifecycle/humanbrowser-cloud-lifecycle.yml
+error_envelope:
+  rest: '{ "error": <stable code>, "message"?: string, "hint"?: string, "retry_after_seconds"?: int } (components.schemas.Error); observed live as {"error":"method-not-allowed"}, {"error":"bad-token"}, {"error":"not-found","path":...}, {"error":"unauthorized","hint":"..."}'
+  jsonrpc: 'JSON-RPC 2.0 error object; observed {"code":-32001,"message":"Unauthorized","data":{"hint":...}}; -32601 for unknown methods per the card'
+  oauth: '{ "error", "error_description" } per RFC 6749 on /authorize and /token'
+  rfc9457: false
+  detail: errors/humanbrowser-cloud-problem-types.yml
+rate_limit_signaling:
+  headers: []
+  status_codes: {balance_exhausted: 402 quota_exceeded, trial_repeat: 429, concurrency_cap: 503 with retry_after_seconds in body}
+  detail: rate-limits/humanbrowser-cloud-rate-limits.yml
+streaming:
+  transport: Server-Sent Events on message/stream (Accept text/event-stream)
+  events: [task (first frame, carries metadata.viewer_url), status-update (final:true on terminal or input-required), artifact-update]
+  push: 'metadata.callback_url receives the terminal task envelope (capabilities.pushNotifications true)'
+  detail: asyncapi/humanbrowser-cloud-webhooks.yml
+human_in_the_loop:
+  mechanism: 'state=input-required with final:true; resume with message/send carrying taskId + contextId (spec form) or referenceTaskIds + metadata.in_reply_to (legacy form); a human can also answer from the viewer modal — first writer wins; server-side auto-decline after timeout_s (default 300, max 1800)'
+  source: agent card extension https://humanbrowser.cloud/a2a-ext/input-required/v1
+sensitive_data:
+  mechanism: 'DataPart with metadata.sensitive=true — credentials are injected at runtime and "never echoed in artifacts or logs"; screenshots are the stated exception ("a frame shows whatever was on screen, including a typed password")'
+  source: https://humanbrowser.cloud/a2a
