@@ -2,16 +2,16 @@
 kin_checks:
   slug: humanbrowser-cloud
   schema_version: 0.22.0
-  scored_at: '2026-09-19'
-  run_ts: 2026-09-19T193153
+  scored_at: '2026-09-21'
+  run_ts: 2026-09-21T233935
   note: Actionable checks (missed + partial) in `checks`, plus the ids that did not
     apply in `na`. Everything else in rubric/scoring-0.22.0.yml was earned; counts
     below let you verify that.
   counts:
     total: 136
     earned: 61
-    partial: 4
-    missed: 46
+    partial: 5
+    missed: 45
     na: 25
   checks:
   - id: well_known_published
@@ -24,8 +24,6 @@ kin_checks:
   - id: openapi_3_0
     status: missed
     detail: 0 of 1 openapi documents pass
-  - id: servers_resolvable
-    status: missed
   - id: operations_description_coverage
     status: missed
     detail: 0 of 1 openapi documents pass
@@ -111,6 +109,10 @@ kin_checks:
     status: missed
   - id: agentic_commerce
     status: missed
+  - id: agentic_access
+    status: partial
+    earned: 2.5
+    detail: 'authorship: derived'
   - id: mcp_server
     status: partial
     earned: 4.8
