@@ -1,0 +1,20 @@
+{
+  "provider": "humanbrowser-cloud",
+  "sources": [
+    "humanbrowser-cloud-openapi.json"
+  ],
+  "outputs": [
+    "humanbrowser-cloud-account-api-openapi.yml",
+    "humanbrowser-cloud-session-api-openapi.yml"
+  ],
+  "archived": [
+    "archived openapi/humanbrowser-cloud-openapi.json"
+  ],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "humanbrowser-cloud-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "apis.yml register: written (+2 apis, 4 total)"
+  ],
+  "skipped": []
+}

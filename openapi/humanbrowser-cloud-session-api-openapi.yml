@@ -1,0 +1,111 @@
+openapi: 3.2.0
+info:
+  title: Human Browser Session API
+  version: 1.0.0
+  description: 'Cloud Chromium for AI agents. Drive a real, residential-IP browser via A2A 1.0, MCP, or this REST API. Agents send natural-language goals; the platform runs a real Chromium session and returns a concise answer plus a live viewer URL. This spec documents the PUBLIC endpoints only — admin/master endpoints are intentionally not published. Versioning: the stable v1 surface is exposed at the paths below; pass an optional `X-API-Version` header to pin a version (default `2026-08-01`).'
+  contact:
+    name: Virix Labs
+    url: https://humanbrowser.cloud
+    email: general@virixlabs.com
+  license:
+    name: Apache-2.0
+    url: https://github.com/VirixLabs/humanbrowser
+servers:
+- url: https://humanbrowser.cloud
+  description: REST account API
+- url: https://agent.humanbrowser.cloud
+  description: A2A 1.0 + MCP session API (Bearer token)
+security:
+- bearerAuth: []
+tags:
+- name: Session
+  description: Run a browser session against a goal
+paths:
+  /a2a:
+    post:
+      tags:
+      - Session
+      operationId: runA2ATask
+      summary: Run a browser session against a natural-language goal (A2A 1.0, JSON-RPC + SSE)
+      description: Live endpoint is https://agent.humanbrowser.cloud/a2a. Send a goal; receive a concise answer + a live viewer URL. Bearer-token auth. Full protocol at /a2a.
+      security:
+      - bearerAuth: []
+      - oauth2:
+        - session:run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jsonrpc:
+                  type: string
+                  const: '2.0'
+                method:
+                  type: string
+                params:
+                  type: object
+      responses:
+        '200':
+          description: Task result stream
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+components:
+  schemas:
+    Error:
+      type: object
+      description: Uniform typed error model returned by every 4xx/5xx response.
+      required:
+      - error
+      properties:
+        error:
+          type: string
+          description: Stable machine-readable error code, e.g. invalid-email, not-signed-in, rate-limited, insufficient-balance, server-error.
+        message:
+          type: string
+          description: Human-readable explanation.
+        hint:
+          type: string
+          description: Optional remediation hint for agents.
+        retry_after_seconds:
+          type: integer
+          description: Present on 429; how long to wait before retrying.
+  responses:
+    PaymentRequired:
+      description: Insufficient prepaid balance — top up to continue
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Human Browser API token (hb_live_… or trial). Send as Authorization: Bearer <token>.'
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: hb_session
+      description: Login session cookie for account endpoints.
+    oauth2:
+      type: oauth2
+      description: Least-privilege scoped access. Request only the scopes an agent needs.
+      flows:
+        clientCredentials:
+          tokenUrl: https://agent.humanbrowser.cloud/oauth/token
+          scopes:
+            session:run: Spawn and drive browser sessions
+            account:read: Read token balance, usage and account state
+            account:topup: Create top-ups / purchases against the account
+externalDocs:
+  description: LLM-friendly reference
+  url: https://humanbrowser.cloud/llms-full.txt
