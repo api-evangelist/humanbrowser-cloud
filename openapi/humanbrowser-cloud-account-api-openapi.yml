@@ -178,6 +178,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    ServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     RateLimited:
       description: Too many requests
       content:
@@ -186,12 +192,6 @@ components:
             $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Missing or invalid credentials
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    ServerError:
-      description: Unexpected server error
       content:
         application/json:
           schema:

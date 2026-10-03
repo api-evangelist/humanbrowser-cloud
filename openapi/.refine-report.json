@@ -1,20 +1,22 @@
 {
   "provider": "humanbrowser-cloud",
   "sources": [
-    "humanbrowser-cloud-openapi.json"
+    "_original/humanbrowser-cloud-openapi.json"
   ],
   "outputs": [
     "humanbrowser-cloud-account-api-openapi.yml",
     "humanbrowser-cloud-session-api-openapi.yml"
   ],
-  "archived": [
-    "archived openapi/humanbrowser-cloud-openapi.json"
-  ],
+  "archived": [],
   "errors": [],
   "warnings": [],
   "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
     "humanbrowser-cloud-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
-    "apis.yml register: written (+2 apis, 4 total)"
+    "apis.yml register: already-registered"
   ],
-  "skipped": []
+  "skipped": [
+    "humanbrowser-cloud-account-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "humanbrowser-cloud-session-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }
