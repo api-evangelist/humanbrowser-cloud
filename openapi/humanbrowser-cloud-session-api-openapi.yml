@@ -54,19 +54,6 @@ paths:
         '402':
           $ref: '#/components/responses/PaymentRequired'
 components:
-  responses:
-    PaymentRequired:
-      description: Insufficient prepaid balance — top up to continue
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid credentials
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
   schemas:
     Error:
       type: object
@@ -86,6 +73,19 @@ components:
         retry_after_seconds:
           type: integer
           description: Present on 429; how long to wait before retrying.
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PaymentRequired:
+      description: Insufficient prepaid balance — top up to continue
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     bearerAuth:
       type: http
