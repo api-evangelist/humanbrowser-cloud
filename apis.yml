@@ -120,6 +120,8 @@ apis:
   humanURL: https://humanbrowser.cloud/docs
   baseURL: https://agent.humanbrowser.cloud
   tags:
+  - Account
+  tags_raw:
   - account
   properties:
   - type: OpenAPI
@@ -138,6 +140,8 @@ apis:
   humanURL: https://humanbrowser.cloud/docs
   baseURL: https://agent.humanbrowser.cloud
   tags:
+  - Sessions
+  tags_raw:
   - session
   properties:
   - type: OpenAPI
@@ -156,6 +160,9 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: CapabilityMap
+  url: capabilities/humanbrowser-cloud-capability-edges.yml
+  name: Virix Labs Business Capability Map
 - type: Overlay
   url: overlays/humanbrowser-cloud-openapi-overlay.yaml
 - type: Website
