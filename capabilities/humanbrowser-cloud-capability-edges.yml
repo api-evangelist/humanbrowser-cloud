@@ -1,0 +1,27 @@
+slug: humanbrowser-cloud
+provider: Virix Labs
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 1
+edges:
+- tag: Account
+  spec_file: humanbrowser-cloud-account-api-openapi.yml
+  capability_id: BC-4250
+  capability_id_l1: BC-4250
+  capability_name: Subscription Billing & Revenue Management
+  confidence: 0.7
+  evidence: POST /api/topup topUp Create a Stripe or crypto top-up for prepaid balance; GET /api/plans
+    getPlans List pay-as-you-go rates and top-up options; GET /api/usage getUsage Recent usage for the
+    authenticated token
+  reason: The operations handle prepaid balance top-up, pay-as-you-go rate listing and usage reporting
+    for a token — consumption-based billing/revenue mechanics. Kept at L1 because it spans metering, rating
+    and payment collection.
