@@ -102,3 +102,60 @@ probed:
 - {url: 'https://humanbrowser.cloud/api/plans', status: 200, fetched: '2026-09-19', content_type: application/json, bytes: 1189}
 - {url: 'https://humanbrowser.cloud/install', status: 200, fetched: '2026-09-19'}
 - {url: 'https://humanbrowser.cloud/pricing', status: 404, fetched: '2026-09-19'}
+x-canonical:
+  generated: '2026-10-08'
+  vocabulary: all/0-working/economics/plans-canonical.yml
+  models:
+  - free
+  - subscription
+  units: []
+  plans:
+  - name: Free trial token
+    access: other
+    model: free
+    model_how: derived
+    units: []
+    periods:
+    - one-time
+  - name: Top up $20
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Top up $80
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Top up $200
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Human Browser Starter
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Human Browser Pro
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
+  - name: Human Browser Enterprise
+    access: other
+    model: subscription
+    model_how: derived
+    units: []
+    periods:
+    - other
