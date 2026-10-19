@@ -1,0 +1,12 @@
+{
+ "url": "https://humanbrowser.cloud/openapi.json",
+ "requested_url": "https://humanbrowser.cloud/openapi.json",
+ "status": 200,
+ "content_type": "application/json; charset=utf-8",
+ "bytes": 8721,
+ "sha256": "3dc6cbd90c7e26e594f8a53c6882fbeb7432a0702977957c9f859d25c71eb1e5",
+ "fetched_at": "2026-10-04",
+ "fetched_by": "APIEvangelist-Harvest/1.0 (+https://apievangelist.com)",
+ "match": "equivalent",
+ "note": "Re-fetched from the provider by verify-openapi-sources.py; the provider's current document describes the same operations (Jaccard 1.0), but the bytes differ, so the archive is an earlier or reformatted copy."
+}

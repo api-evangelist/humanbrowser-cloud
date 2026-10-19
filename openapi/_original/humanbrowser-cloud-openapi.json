@@ -2,131 +2,625 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Human Browser API",
-    "version": "1.0.0",
-    "description": "Cloud Chromium for AI agents. Drive a real, residential-IP browser via A2A 1.0, MCP, or this REST API. Agents send natural-language goals; the platform runs a real Chromium session and returns a concise answer plus a live viewer URL. This spec documents the PUBLIC endpoints only — admin/master endpoints are intentionally not published. Versioning: the stable v1 surface is exposed at the paths below; pass an optional `X-API-Version` header to pin a version (default `2026-08-01`).",
-    "contact": { "name": "Virix Labs", "url": "https://humanbrowser.cloud", "email": "general@virixlabs.com" },
-    "license": { "name": "Apache-2.0", "url": "https://github.com/VirixLabs/humanbrowser" }
+    "version": "1.1.0",
+    "description": "Human Browser: a cloud browser agent for AI agents. Send a natural-language goal; a real Chromium on a residential IP runs it and returns the answer plus a live viewer URL. This spec covers the public account endpoints on humanbrowser.cloud and the A2A JSON-RPC endpoint on agent.humanbrowser.cloud (per-operation servers). Agent-oriented guide: https://humanbrowser.cloud/llms-full.txt. Agent card: https://agent.humanbrowser.cloud/.well-known/agent-card.json.",
+    "contact": {
+      "name": "Virix Labs",
+      "url": "https://humanbrowser.cloud",
+      "email": "general@virixlabs.com"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://github.com/VirixLabs/humanbrowser"
+    }
   },
   "servers": [
-    { "url": "https://humanbrowser.cloud", "description": "REST account API" },
-    { "url": "https://agent.humanbrowser.cloud", "description": "A2A 1.0 + MCP session API (Bearer token)" }
+    {
+      "url": "https://humanbrowser.cloud",
+      "description": "Account API"
+    },
+    {
+      "url": "https://agent.humanbrowser.cloud",
+      "description": "A2A + MCP + sessions (Bearer token)"
+    }
   ],
-  "externalDocs": { "description": "LLM-friendly reference", "url": "https://humanbrowser.cloud/llms-full.txt" },
-  "security": [{ "bearerAuth": [] }],
+  "externalDocs": {
+    "description": "LLM-friendly reference",
+    "url": "https://humanbrowser.cloud/llms-full.txt"
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "tags": [
-    { "name": "account", "description": "Token, balance and top-ups" },
-    { "name": "session", "description": "Run a browser session against a goal" }
+    {
+      "name": "account",
+      "description": "Token, balance and top-ups"
+    },
+    {
+      "name": "session",
+      "description": "Run a browser session against a goal"
+    }
   ],
   "paths": {
     "/api/trial-balance": {
       "post": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "operationId": "claimTrial",
-        "summary": "Claim a free trial token by email (no card).",
-        "description": "Email-gated. Issues a token carrying a free starter balance. One per email.",
+        "summary": "Sign up by email (magic sign-in link).",
+        "description": "Email-gated sign-up. Sends a one-time sign-in link to /account. No free credit: new accounts start at $0 balance; the first top-up can be $1 (one real task), later top-ups from $5.",
         "security": [],
-        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApiVersion"
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "format": "email" } } } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "Token issued", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" }, "balance_usd": { "type": "number" } } } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "200": {
+            "description": "Sign-in link emailed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "type": "string",
+                      "example": "magic-link"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/account": {
       "get": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "operationId": "getAccount",
         "summary": "Get the signed-in account: token, balance, session count.",
-        "security": [{ "sessionCookie": [] }, { "oauth2": ["account:read"] }],
-        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApiVersion"
+          }
+        ],
         "responses": {
-          "200": { "description": "Account record", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" }, "balance_usd": { "type": "number" }, "spent_usd": { "type": "number" }, "session_count": { "type": "integer" } } } } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "200": {
+            "description": "Account record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "balance_usd": {
+                      "type": "number"
+                    },
+                    "spent_usd": {
+                      "type": "number"
+                    },
+                    "session_count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/topup": {
       "post": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "operationId": "topUp",
         "summary": "Create a Stripe or crypto top-up for prepaid balance.",
-        "security": [{ "bearerAuth": [] }, { "oauth2": ["account:topup"] }],
-        "parameters": [{ "$ref": "#/components/parameters/ApiVersion" }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["amount_usd"], "properties": { "amount_usd": { "type": "number", "minimum": 1 }, "method": { "type": "string", "enum": ["stripe", "crypto"] } } } } } },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApiVersion"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount_usd"
+                ],
+                "properties": {
+                  "amount_usd": {
+                    "type": "number",
+                    "minimum": 1
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "stripe",
+                      "crypto"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Checkout URL", "content": { "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } } } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "200": {
+            "description": "Checkout URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
     "/api/plans": {
-      "get": { "tags": ["account"], "operationId": "getPlans", "summary": "List pay-as-you-go rates and top-up options.", "security": [], "responses": { "200": { "description": "Pricing", "content": { "application/json": {} } }, "500": { "$ref": "#/components/responses/ServerError" } } }
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "operationId": "getPlans",
+        "summary": "List pay-as-you-go rates and top-up options.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Pricing",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
     },
     "/api/usage": {
-      "get": { "tags": ["account"], "operationId": "getUsage", "summary": "Recent usage for the authenticated token.", "security": [{ "bearerAuth": [] }, { "oauth2": ["account:read"] }], "responses": { "200": { "description": "Usage rows", "content": { "application/json": {} } }, "401": { "$ref": "#/components/responses/Unauthorized" } } }
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "operationId": "getUsage",
+        "summary": "Recent usage for the authenticated token.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage rows",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
     },
     "/a2a": {
       "post": {
-        "tags": ["session"],
-        "operationId": "runA2ATask",
-        "summary": "Run a browser session against a natural-language goal (A2A 1.0, JSON-RPC + SSE).",
-        "description": "Live endpoint is https://agent.humanbrowser.cloud/a2a. Send a goal; receive a concise answer + a live viewer URL. Bearer-token auth. Full protocol at /a2a.",
-        "security": [{ "bearerAuth": [] }, { "oauth2": ["session:run"] }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "jsonrpc": { "type": "string", "const": "2.0" }, "method": { "type": "string" }, "params": { "type": "object" } } } } } },
+        "tags": [
+          "session"
+        ],
+        "operationId": "a2aJsonRpc",
+        "servers": [
+          {
+            "url": "https://agent.humanbrowser.cloud"
+          }
+        ],
+        "summary": "A2A JSON-RPC 2.0: message/send, message/stream, tasks/get, tasks/cancel, actions/*",
+        "description": "A2A v0.3 wire format. message/send returns a Task within seconds (state \"working\", metadata.viewerUrl); poll tasks/get {id} every 3-5 s until completed | failed | canceled | input-required; the answer is metadata.outcome.result. Credentials: a data part {\"kind\":\"data\",\"metadata\":{\"sensitive\":true},\"data\":{\"password\":\"...\"}} referenced as <password> in the goal. JSON-RPC errors come back with HTTP 200 except auth (401) and balance (402). Full guide: https://humanbrowser.cloud/llms-full.txt",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "jsonrpc",
+                  "id",
+                  "method",
+                  "params"
+                ],
+                "properties": {
+                  "jsonrpc": {
+                    "type": "string",
+                    "const": "2.0"
+                  },
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "method": {
+                    "type": "string",
+                    "examples": [
+                      "message/send",
+                      "message/stream",
+                      "tasks/get",
+                      "tasks/cancel",
+                      "actions/list_countries"
+                    ]
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "message/send: {message:{role:\"user\",messageId,parts:[{kind:\"text\",text}|{kind:\"data\",data,metadata?}|{kind:\"file\",file:{name,mimeType,uri|bytes}}],referenceTaskIds?,taskId?,contextId?,metadata?},metadata?}. tasks/get and tasks/cancel: {id}."
+                  }
+                }
+              },
+              "examples": {
+                "send": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "message/send",
+                    "params": {
+                      "message": {
+                        "role": "user",
+                        "messageId": "m1",
+                        "parts": [
+                          {
+                            "kind": "text",
+                            "text": "Open https://news.ycombinator.com and return the top 3 story titles as JSON."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "poll": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tasks/get",
+                    "params": {
+                      "id": "t_27b88f806e7c28e6"
+                    }
+                  }
+                },
+                "login": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "id": 3,
+                    "method": "message/send",
+                    "params": {
+                      "message": {
+                        "role": "user",
+                        "messageId": "m3",
+                        "parts": [
+                          {
+                            "kind": "text",
+                            "text": "Log into https://app.example.com as <email> with <password> and list my last 5 invoices."
+                          },
+                          {
+                            "kind": "data",
+                            "metadata": {
+                              "sensitive": true
+                            },
+                            "data": {
+                              "email": "me@example.com",
+                              "password": "S3cret!"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "answer_input_required": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "id": 4,
+                    "method": "message/send",
+                    "params": {
+                      "message": {
+                        "role": "user",
+                        "messageId": "m4",
+                        "referenceTaskIds": [
+                          "t_27b88f806e7c28e6"
+                        ],
+                        "metadata": {
+                          "in_reply_to": "req_bb12e169e2a88d66"
+                        },
+                        "parts": [
+                          {
+                            "kind": "text",
+                            "text": "493817"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Task result stream" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/PaymentRequired" }
+          "200": {
+            "description": "JSON-RPC result (a Task) or JSON-RPC error. message/stream answers with text/event-stream.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "jsonrpc": "2.0",
+                  "id": 1,
+                  "result": {
+                    "id": "t_27b88f806e7c28e6",
+                    "contextId": "ctx_e6595bd310be",
+                    "kind": "task",
+                    "status": {
+                      "state": "working"
+                    },
+                    "artifacts": [],
+                    "metadata": {
+                      "sessionId": "s_a276fa71b1",
+                      "viewerUrl": "https://humanbrowser.cloud/a/s_a276fa71b1?k=...",
+                      "profile": "ycombinator",
+                      "profile_inferred": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          }
+        }
+      }
+    },
+    "/api/balance": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "operationId": "getBalance",
+        "servers": [
+          {
+            "url": "https://agent.humanbrowser.cloud"
+          }
+        ],
+        "summary": "Balance of the token in the Authorization header.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "balance_usd": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
         }
       }
     }
   },
   "components": {
     "parameters": {
-      "ApiVersion": { "name": "X-API-Version", "in": "header", "required": false, "description": "Pin the API version (date-based). Defaults to the latest stable.", "schema": { "type": "string", "default": "2026-08-01" } }
+      "ApiVersion": {
+        "name": "X-API-Version",
+        "in": "header",
+        "required": false,
+        "description": "Pin the API version (date-based). Defaults to the latest stable.",
+        "schema": {
+          "type": "string",
+          "default": "2026-08-01"
+        }
+      }
     },
     "schemas": {
       "Error": {
         "type": "object",
         "description": "Uniform typed error model returned by every 4xx/5xx response.",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "properties": {
-          "error": { "type": "string", "description": "Stable machine-readable error code, e.g. invalid-email, not-signed-in, rate-limited, insufficient-balance, server-error." },
-          "message": { "type": "string", "description": "Human-readable explanation." },
-          "hint": { "type": "string", "description": "Optional remediation hint for agents." },
-          "retry_after_seconds": { "type": "integer", "description": "Present on 429; how long to wait before retrying." }
+          "error": {
+            "type": "string",
+            "description": "Stable machine-readable error code, e.g. invalid-email, not-signed-in, rate-limited, insufficient-balance, server-error."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation."
+          },
+          "hint": {
+            "type": "string",
+            "description": "Optional remediation hint for agents."
+          },
+          "retry_after_seconds": {
+            "type": "integer",
+            "description": "Present on 429; how long to wait before retrying."
+          }
         }
       }
     },
     "responses": {
-      "BadRequest": { "description": "Invalid request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Unauthorized": { "description": "Missing or invalid credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "PaymentRequired": { "description": "Insufficient prepaid balance — top up to continue", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "RateLimited": { "description": "Too many requests", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "ServerError": { "description": "Unexpected server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+      "BadRequest": {
+        "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid credentials",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "PaymentRequired": {
+        "description": "Insufficient prepaid balance — top up to continue",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Too many requests",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
     },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Human Browser API token (hb_live_… or trial). Send as Authorization: Bearer <token>." },
-      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "hb_session", "description": "Login session cookie for account endpoints." },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API token hb_live_<owner>_<32 hex> from https://humanbrowser.cloud/account. Send as Authorization: Bearer <token>; never in a URL."
+      },
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hb_session",
+        "description": "Login session cookie for account endpoints."
+      },
       "oauth2": {
         "type": "oauth2",
-        "description": "Least-privilege scoped access. Request only the scopes an agent needs.",
+        "description": "OAuth 2.1 for the MCP endpoint (https://agent.humanbrowser.cloud/mcp). The issued access token is the account's hb_live token, so it also works as bearerAuth.",
         "flows": {
-          "clientCredentials": {
-            "tokenUrl": "https://agent.humanbrowser.cloud/oauth/token",
+          "authorizationCode": {
+            "authorizationUrl": "https://agent.humanbrowser.cloud/authorize",
+            "tokenUrl": "https://agent.humanbrowser.cloud/token",
+            "refreshUrl": "https://agent.humanbrowser.cloud/token",
             "scopes": {
-              "session:run": "Spawn and drive browser sessions",
-              "account:read": "Read token balance, usage and account state",
-              "account:topup": "Create top-ups / purchases against the account"
+              "mcp:run": "Start and drive browser tasks",
+              "mcp:read": "Read task status"
             }
           }
         }

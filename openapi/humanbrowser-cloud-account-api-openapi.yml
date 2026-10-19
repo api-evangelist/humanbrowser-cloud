@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
   title: Human Browser Account API
-  version: 1.0.0
-  description: 'Cloud Chromium for AI agents. Drive a real, residential-IP browser via A2A 1.0, MCP, or this REST API. Agents send natural-language goals; the platform runs a real Chromium session and returns a concise answer plus a live viewer URL. This spec documents the PUBLIC endpoints only — admin/master endpoints are intentionally not published. Versioning: the stable v1 surface is exposed at the paths below; pass an optional `X-API-Version` header to pin a version (default `2026-08-01`).'
+  version: 1.1.0
+  description: 'Human Browser: a cloud browser agent for AI agents. Send a natural-language goal; a real Chromium on a residential IP runs it and returns the answer plus a live viewer URL. This spec covers the public account endpoints on humanbrowser.cloud and the A2A JSON-RPC endpoint on agent.humanbrowser.cloud (per-operation servers). Agent-oriented guide: https://humanbrowser.cloud/llms-full.txt. Agent card: https://agent.humanbrowser.cloud/.well-known/agent-card.json.'
   contact:
     name: Virix Labs
     url: https://humanbrowser.cloud
@@ -12,9 +12,9 @@ info:
     url: https://github.com/VirixLabs/humanbrowser
 servers:
 - url: https://humanbrowser.cloud
-  description: REST account API
+  description: Account API
 - url: https://agent.humanbrowser.cloud
-  description: A2A 1.0 + MCP session API (Bearer token)
+  description: A2A + MCP + sessions (Bearer token)
 security:
 - bearerAuth: []
 tags:
@@ -26,8 +26,8 @@ paths:
       tags:
       - Account
       operationId: claimTrial
-      summary: Claim a free trial token by email (no card)
-      description: Email-gated. Issues a token carrying a free starter balance. One per email.
+      summary: Sign up by email (magic sign-in link)
+      description: 'Email-gated sign-up. Sends a one-time sign-in link to /account. No free credit: new accounts start at $0 balance; the first top-up can be $1 (one real task), later top-ups from $5.'
       security: []
       parameters:
       - $ref: '#/components/parameters/ApiVersion'
@@ -45,16 +45,19 @@ paths:
                   format: email
       responses:
         '200':
-          description: Token issued
+          description: Sign-in link emailed
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  token:
+                  ok:
+                    type: boolean
+                  mode:
                     type: string
-                  balance_usd:
-                    type: number
+                    example: magic-link
+                  email:
+                    type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '429':
@@ -69,8 +72,6 @@ paths:
       summary: 'Get the signed-in account: token, balance, session count'
       security:
       - sessionCookie: []
-      - oauth2:
-        - account:read
       parameters:
       - $ref: '#/components/parameters/ApiVersion'
       responses:
@@ -101,8 +102,6 @@ paths:
       summary: Create a Stripe or crypto top-up for prepaid balance
       security:
       - bearerAuth: []
-      - oauth2:
-        - account:topup
       parameters:
       - $ref: '#/components/parameters/ApiVersion'
       requestBody:
@@ -161,8 +160,6 @@ paths:
       summary: Recent usage for the authenticated token
       security:
       - bearerAuth: []
-      - oauth2:
-        - account:read
       responses:
         '200':
           description: Usage rows
@@ -170,10 +167,47 @@ paths:
             application/json: {}
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/balance:
+    get:
+      tags:
+      - Account
+      operationId: getBalance
+      servers:
+      - url: https://agent.humanbrowser.cloud
+      summary: Balance of the token in the Authorization header
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance_usd:
+                    type: number
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 components:
+  parameters:
+    ApiVersion:
+      name: X-API-Version
+      in: header
+      required: false
+      description: Pin the API version (date-based). Defaults to the latest stable.
+      schema:
+        type: string
+        default: '2026-08-01'
   responses:
     ServerError:
       description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid credentials
       content:
         application/json:
           schema:
@@ -190,21 +224,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    Unauthorized:
-      description: Missing or invalid credentials
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-  parameters:
-    ApiVersion:
-      name: X-API-Version
-      in: header
-      required: false
-      description: Pin the API version (date-based). Defaults to the latest stable.
-      schema:
-        type: string
-        default: '2026-08-01'
   schemas:
     Error:
       type: object
@@ -228,7 +247,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      description: 'Human Browser API token (hb_live_… or trial). Send as Authorization: Bearer <token>.'
+      description: 'API token hb_live_<owner>_<32 hex> from https://humanbrowser.cloud/account. Send as Authorization: Bearer <token>; never in a URL.'
     sessionCookie:
       type: apiKey
       in: cookie
@@ -236,14 +255,15 @@ components:
       description: Login session cookie for account endpoints.
     oauth2:
       type: oauth2
-      description: Least-privilege scoped access. Request only the scopes an agent needs.
+      description: OAuth 2.1 for the MCP endpoint (https://agent.humanbrowser.cloud/mcp). The issued access token is the account's hb_live token, so it also works as bearerAuth.
       flows:
-        clientCredentials:
-          tokenUrl: https://agent.humanbrowser.cloud/oauth/token
+        authorizationCode:
+          authorizationUrl: https://agent.humanbrowser.cloud/authorize
+          tokenUrl: https://agent.humanbrowser.cloud/token
+          refreshUrl: https://agent.humanbrowser.cloud/token
           scopes:
-            session:run: Spawn and drive browser sessions
-            account:read: Read token balance, usage and account state
-            account:topup: Create top-ups / purchases against the account
+            mcp:run: Start and drive browser tasks
+            mcp:read: Read task status
 externalDocs:
   description: LLM-friendly reference
   url: https://humanbrowser.cloud/llms-full.txt
