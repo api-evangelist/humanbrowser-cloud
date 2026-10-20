@@ -1,4 +1,34 @@
 edges:
+- partner_name: npm registry
+  partner: npm
+  partner_match: register
+  type: register
+  direction: provider-built
+  category: official SDK (JavaScript/TypeScript)
+  evidence: https://www.npmjs.com/package/@virixlabs/humanbrowser
+  channel: package-registry
+  relationship: distribution-channel
+  contract_reference:
+    register: npm registry (public registry JSON)
+    spec_file: null
+    language: JavaScript/TypeScript
+    packages:
+    - name: '@virixlabs/humanbrowser'
+      version: 5.0.3
+      released: '2026-06-17'
+      released_field: modified
+      lapsed: false
+      page: https://www.npmjs.com/package/@virixlabs/humanbrowser
+      repo_leg: domain:humanbrowser.cloud
+      publisher_leg: org:virixlabs
+      matched_by: domain
+    current: true
+    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
+      24 months'
+    detected_by: sweep-official-sdks.py
+    detected: '2026-10-18'
+  detected_by: sweep-official-sdks.py
+  first_seen: '2026-10-18'
 - partner_name: A2A protocol (own Agent Card)
   partner: null
   partner_match: register
@@ -15,7 +45,7 @@ edges:
   a2a_card:
     grade: conformant
     verdict: live
-    protocol_version: 0.3.0
+    protocol_version: 1.0.0
     deviations: []
     card_subject: api
   contract_reference:
@@ -23,12 +53,12 @@ edges:
     spec_file: null
     standard: A2A
     role: a2a-agent-card
-    registered_name: Human Browser
+    registered_name: humanbrowser
     organization: Virix Labs
     matched_domain: humanbrowser.cloud
     matched_by: own-domain
     detected_by: sweep-ai-agents.py
-    detected: '2026-10-15'
+    detected: '2026-10-19'
   detected_by: sweep-ai-agents.py
   first_seen: '2026-10-15'
 - partner_name: a2aregistry.org
@@ -64,39 +94,9 @@ edges:
     sample_agents:
     - Human Browser
     detected_by: sweep-ai-agents.py
-    detected: '2026-10-15'
+    detected: '2026-10-19'
   detected_by: sweep-ai-agents.py
   first_seen: '2026-10-15'
-- partner_name: npm registry
-  partner: npm
-  partner_match: register
-  type: register
-  direction: provider-built
-  category: official SDK (JavaScript/TypeScript)
-  evidence: https://www.npmjs.com/package/@virixlabs/humanbrowser
-  channel: package-registry
-  relationship: distribution-channel
-  contract_reference:
-    register: npm registry (public registry JSON)
-    spec_file: null
-    language: JavaScript/TypeScript
-    packages:
-    - name: '@virixlabs/humanbrowser'
-      version: 5.0.3
-      released: '2026-06-17'
-      released_field: modified
-      lapsed: false
-      page: https://www.npmjs.com/package/@virixlabs/humanbrowser
-      repo_leg: domain:humanbrowser.cloud
-      publisher_leg: org:virixlabs
-      matched_by: domain
-    current: true
-    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
-      24 months'
-    detected_by: sweep-official-sdks.py
-    detected: '2026-10-18'
-  detected_by: sweep-official-sdks.py
-  first_seen: '2026-10-18'
 generated: '2026-10-15'
 method: searched
 source:
